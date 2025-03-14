@@ -4,8 +4,11 @@ use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Resp
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, GetCountResponse, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{State, STATE};
+
+pub mod execute;
+pub mod query;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:influencer-stocks";
@@ -16,141 +19,138 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msg: InstantiateMsg,
+    _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     let state = State {
-        count: msg.count,
         owner: info.sender.clone(),
     };
+
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
     STATE.save(deps.storage, &state)?;
 
     Ok(Response::new()
         .add_attribute("method", "instantiate")
-        .add_attribute("owner", info.sender)
-        .add_attribute("count", msg.count.to_string()))
+        .add_attribute("owner", info.sender))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Increment {} => execute::increment(deps),
-        ExecuteMsg::Reset { count } => execute::reset(deps, info, count),
-    }
-}
-
-pub mod execute {
-    use super::*;
-
-    pub fn increment(deps: DepsMut) -> Result<Response, ContractError> {
-        STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
-            state.count += 1;
-            Ok(state)
-        })?;
-
-        Ok(Response::new().add_attribute("action", "increment"))
-    }
-
-    pub fn reset(deps: DepsMut, info: MessageInfo, count: i32) -> Result<Response, ContractError> {
-        STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
-            if info.sender != state.owner {
-                return Err(ContractError::Unauthorized {});
-            }
-            state.count = count;
-            Ok(state)
-        })?;
-        Ok(Response::new().add_attribute("action", "reset"))
+        ExecuteMsg::CreateStock { ticker } => execute::create_stock(deps, env, info, ticker),
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetCount {} => to_json_binary(&query::count(deps)?),
-    }
-}
-
-pub mod query {
-    use super::*;
-
-    pub fn count(deps: Deps) -> StdResult<GetCountResponse> {
-        let state = STATE.load(deps.storage)?;
-        Ok(GetCountResponse { count: state.count })
+        QueryMsg::GetStockById { stock_id } => {
+            to_json_binary(&query::get_stock_by_id(deps, env, stock_id)?)
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use crate::msg::GetStockByIdResponse;
+    use crate::state::Stock;
+    use crate::utils;
+    use cosmwasm_std::testing::{message_info, mock_dependencies, mock_env};
     use cosmwasm_std::{coins, from_json};
+    use execute::TOTAL_SHARES;
 
     #[test]
     fn proper_initialization() {
         let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg { count: 17 };
-        let info = mock_info("creator", &coins(1000, "earth"));
+        let creator = deps.api.addr_make("creator");
+
+        let msg = InstantiateMsg {};
+
+        let info = message_info(&creator, &coins(1000, "token"));
+
+        let sender = info.sender.clone();
 
         // we can just call .unwrap() to assert this was a success
         let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-        assert_eq!(0, res.messages.len());
 
-        // it worked, let's query the state
-        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetCount {}).unwrap();
-        let value: GetCountResponse = from_json(&res).unwrap();
-        assert_eq!(17, value.count);
+        assert!(utils::response::has_attribute(
+            &res,
+            "method",
+            "instantiate"
+        ));
+
+        assert!(utils::response::has_attribute(
+            &res,
+            "owner",
+            sender.as_str()
+        ));
     }
 
     #[test]
-    fn increment() {
+    fn test_create_and_query_stock_by_id() {
         let mut deps = mock_dependencies();
 
-        let msg = InstantiateMsg { count: 17 };
-        let info = mock_info("creator", &coins(2, "token"));
-        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+        let creator = deps.api.addr_make("creator");
+        let msg = InstantiateMsg {};
+        let info = message_info(&creator, &coins(1000, "token"));
 
-        // beneficiary can release it
-        let info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::Increment {};
-        let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+        // we can just call .unwrap() to assert this was a success
+        instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-        // should increase counter by 1
-        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetCount {}).unwrap();
-        let value: GetCountResponse = from_json(&res).unwrap();
-        assert_eq!(18, value.count);
-    }
+        let anyone = deps.api.addr_make("anyone");
+        let ticker = "TEST".to_owned();
+        let msg = ExecuteMsg::CreateStock {
+            ticker: ticker.clone(),
+        };
+        let info = message_info(&anyone, &coins(100, "token"));
 
-    #[test]
-    fn reset() {
-        let mut deps = mock_dependencies();
+        // we can just call .unwrap() to assert this was a success
+        let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-        let msg = InstantiateMsg { count: 17 };
-        let info = mock_info("creator", &coins(2, "token"));
-        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+        let stock_id: u64 = res
+            .attributes
+            .iter()
+            .find(|attr| attr.key == "stock_id".to_owned())
+            .unwrap()
+            .value
+            //convert from string to u64
+            .parse()
+            .unwrap();
 
-        // beneficiary can release it
-        let unauth_info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::Reset { count: 5 };
-        let res = execute(deps.as_mut(), mock_env(), unauth_info, msg);
-        match res {
-            Err(ContractError::Unauthorized {}) => {}
-            _ => panic!("Must return unauthorized error"),
-        }
+        // assert that the stock_id starts at 1
+        assert_eq!(stock_id, 1);
 
-        // only the original creator can reset the counter
-        let auth_info = mock_info("creator", &coins(2, "token"));
-        let msg = ExecuteMsg::Reset { count: 5 };
-        let _res = execute(deps.as_mut(), mock_env(), auth_info, msg).unwrap();
+        // let's query the stock with the stock_id
+        let res = query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::GetStockById { stock_id },
+        )
+        .unwrap();
 
-        // should now be 5
-        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetCount {}).unwrap();
-        let value: GetCountResponse = from_json(&res).unwrap();
-        assert_eq!(5, value.count);
+        let value: GetStockByIdResponse = from_json(&res).unwrap();
+
+        assert_eq!(
+            GetStockByIdResponse {
+                stock: Stock {
+                    id: stock_id,
+                    ticker,
+                    influencer: anyone,
+                    total_shares: TOTAL_SHARES,
+                    auction_active: false,
+                    auction_start: None,
+                    auction_end: None,
+                    created_at: value.clone().stock.created_at
+                }
+            },
+            value
+        );
     }
 }

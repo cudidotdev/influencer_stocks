@@ -1,7 +1,7 @@
 [package]
 name = "influencer-stocks"
 version = "0.1.0"
-authors = ["Cudilala <augustinemadu9@gmail.com>"]
+authors = ["Cudi <augustinemadu9@gmail.com>"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -32,8 +32,9 @@ optimize = """docker run --rm -v "$(pwd)":/code \
 """
 
 [dependencies]
-cosmwasm-schema = "2.2.0"
-cosmwasm-std = { version = "2.2.0", features = [
+chrono = "0.4.40"
+cosmwasm-schema = "2.2.2"
+cosmwasm-std = { version = "2.2.2", features = [
   "cosmwasm_1_4",
   # Enable this if you only deploy to chains that have CosmWasm 2.0 or higher
   # "cosmwasm_2_0",
@@ -44,7 +45,8 @@ cw-storage-plus = "2.0.0"
 cw2 = "2.0.0"
 schemars = "0.8.16"
 serde = { version = "1.0.197", default-features = false, features = ["derive"] }
-thiserror = { version = "1.0.58" }
+thiserror = { version = "2.0.12" }
+uuid = { version = "1.15.1", features = ["v4"] }
 
 [dev-dependencies]
 cw-multi-test = "2.0.0"
