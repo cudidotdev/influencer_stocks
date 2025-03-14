@@ -2,12 +2,14 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::Addr;
-use cw_storage_plus::{Item, Map};
+use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct State {
     pub owner: Addr,
 }
+
+pub const STATE: Item<State> = Item::new("state");
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Stock {
@@ -21,7 +23,27 @@ pub struct Stock {
     pub created_at: i64,
 }
 
-// Storage items
-pub const STATE: Item<State> = Item::new("state");
-pub const STOCKS: Map<&[u8], Stock> = Map::new("stocks");
+// Index for Stocks
+pub struct StockIndexes<'a> {
+    // Secondary indexes
+    influencer: MultiIndex<'a, Addr, Stock, &'a [u8]>,
+}
+
+impl IndexList<Stock> for StockIndexes<'_> {
+    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Stock>> + '_> {
+        let v = vec![&self.influencer as &dyn Index<Stock>];
+        Box::new(v.into_iter())
+    }
+}
+
+// Create indexes
+pub const STOCK_INDEXES: StockIndexes = StockIndexes {
+    influencer: MultiIndex::new(
+        |_pk, stock| stock.influencer.clone(),
+        "stocks",
+        "stocks__influencer",
+    ),
+};
+
+pub const STOCKS: IndexedMap<&[u8], Stock, StockIndexes> = IndexedMap::new("stocks", STOCK_INDEXES);
 pub const STOCK_COUNT: Item<u64> = Item::new("stock_count");

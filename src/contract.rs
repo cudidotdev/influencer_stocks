@@ -127,7 +127,7 @@ mod tests {
         // assert that the stock_id starts at 1
         assert_eq!(stock_id, 1);
 
-        // let's query the stock with the stock_id
+        // let's get the stock by the stock_id
         let res = query(
             deps.as_ref(),
             mock_env(),
