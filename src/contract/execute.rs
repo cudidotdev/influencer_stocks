@@ -7,8 +7,6 @@ use crate::{
     ContractError,
 };
 
-use uuid::Uuid;
-
 use chrono::Utc;
 
 // total shares for a stock fixed at 1_000_000 for now,
@@ -43,7 +41,7 @@ pub fn create_stock(
     };
 
     // Save the stock
-    STOCKS.save(deps.storage, &stock_id.to_be_bytes(), &stock)?;
+    STOCKS.save(deps.storage, stock_id.to_be_bytes().as_slice(), &stock)?;
 
     Ok(Response::new()
         .add_attribute("action", "create_stock")

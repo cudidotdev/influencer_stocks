@@ -26,7 +26,7 @@ pub struct Stock {
 // Index for Stocks
 pub struct StockIndexes<'a> {
     // Secondary indexes
-    influencer: MultiIndex<'a, Addr, Stock, &'a [u8]>,
+    pub influencer: MultiIndex<'a, Addr, Stock, &'a [u8]>,
 }
 
 impl IndexList<Stock> for StockIndexes<'_> {

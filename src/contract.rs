@@ -52,6 +52,22 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetStockById { stock_id } => {
             to_json_binary(&query::get_stock_by_id(deps, env, stock_id)?)
         }
+
+        QueryMsg::GetAllStocks { limit, start_after } => {
+            to_json_binary(&query::get_all_stocks(deps, env, limit, start_after)?)
+        }
+
+        QueryMsg::GetStocksByInfluencer {
+            influencer,
+            limit,
+            start_after,
+        } => to_json_binary(&query::get_stocks_by_influencer(
+            deps,
+            env,
+            influencer,
+            limit,
+            start_after,
+        )?),
     }
 }
 
@@ -80,13 +96,13 @@ mod tests {
         // we can just call .unwrap() to assert this was a success
         let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-        assert!(utils::response::has_attribute(
+        assert!(utils::response::contains_attribute(
             &res,
             "method",
             "instantiate"
         ));
 
-        assert!(utils::response::has_attribute(
+        assert!(utils::response::contains_attribute(
             &res,
             "owner",
             sender.as_str()
@@ -153,4 +169,7 @@ mod tests {
             value
         );
     }
+
+    #[test]
+    fn test_create_all_stocks() {}
 }
