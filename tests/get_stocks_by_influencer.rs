@@ -1,5 +1,5 @@
-use common::{contract_code, setup_app, DENOM};
-use cosmwasm_std::{coins, Addr};
+use common::{contract_code, setup_app};
+use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
 use influencer_stocks::msg::{ExecuteMsg, GetStocksResponse, InstantiateMsg, QueryMsg};
 
@@ -24,8 +24,6 @@ fn test_get_stocks_by_influencer() {
 
     // Create 3 stocks for influencer1
     let influencer1 = Addr::unchecked("influencer1");
-    app.send_tokens(vault.clone(), influencer1.clone(), &coins(300, DENOM))
-        .unwrap();
 
     for i in 1..=3 {
         let ticker = format!("INF1_{}", i);
@@ -39,8 +37,6 @@ fn test_get_stocks_by_influencer() {
 
     // Create 2 stocks for influencer2
     let influencer2 = Addr::unchecked("influencer2");
-    app.send_tokens(vault.clone(), influencer2.clone(), &coins(200, DENOM))
-        .unwrap();
 
     for i in 1..=2 {
         let ticker = format!("INF2_{}", i);
@@ -131,10 +127,8 @@ fn test_get_stocks_by_influencer_with_limit() {
         )
         .unwrap();
 
-    // Create 5 stocks for the same influencer
+    // Create 5 stocks for the main influencer
     let influencer = Addr::unchecked("influencer1");
-    app.send_tokens(vault.clone(), influencer.clone(), &coins(500, DENOM))
-        .unwrap();
 
     for i in 1..=5 {
         let ticker = format!("INF1_{}", i);
@@ -144,6 +138,24 @@ fn test_get_stocks_by_influencer_with_limit() {
 
         app.execute_contract(influencer.clone(), contract_addr.clone(), &create_msg, &[])
             .unwrap();
+    }
+
+    // Create 5 stocks for the another influencer
+    let different_influencer = Addr::unchecked("influencer2");
+
+    for i in 1..=5 {
+        let ticker = format!("INF2_{}", i);
+        let create_msg = ExecuteMsg::CreateStock {
+            ticker: ticker.clone(),
+        };
+
+        app.execute_contract(
+            different_influencer.clone(),
+            contract_addr.clone(),
+            &create_msg,
+            &[],
+        )
+        .unwrap();
     }
 
     // Query with limit
@@ -162,7 +174,7 @@ fn test_get_stocks_by_influencer_with_limit() {
     // Verify number of stocks respects limit
     assert_eq!(response.stocks.len(), limit);
 
-    // Verify all stocks belong to the influencer
+    // Verify all stocks belong to the main influencer
     for stock in &response.stocks {
         assert_eq!(stock.influencer, influencer);
     }
@@ -192,8 +204,6 @@ fn test_get_stocks_by_influencer_with_start_after() {
 
     // Create 5 stocks for the same influencer
     let influencer = Addr::unchecked("influencer1");
-    app.send_tokens(vault.clone(), influencer.clone(), &coins(500, DENOM))
-        .unwrap();
 
     let mut stock_ids = Vec::new();
 
@@ -221,8 +231,53 @@ fn test_get_stocks_by_influencer_with_start_after() {
         stock_ids.push(stock_id);
     }
 
-    // Get ID of the 3rd stock for start_after parameter
-    let start_after = stock_ids[2];
+    // Create 5 stocks for the another influencer
+    let different_influencer = Addr::unchecked("influencer2");
+
+    for i in 1..=5 {
+        let ticker = format!("INF2_{}", i);
+        let create_msg = ExecuteMsg::CreateStock {
+            ticker: ticker.clone(),
+        };
+
+        app.execute_contract(
+            different_influencer.clone(),
+            contract_addr.clone(),
+            &create_msg,
+            &[],
+        )
+        .unwrap();
+    }
+
+    let stock_id_len = stock_ids.len();
+
+    // create 4 more stocks for main influencer
+    for i in 1..=4 {
+        let ticker = format!("INF1_{}", stock_id_len + i);
+        let create_msg = ExecuteMsg::CreateStock {
+            ticker: ticker.clone(),
+        };
+
+        let res = app
+            .execute_contract(influencer.clone(), contract_addr.clone(), &create_msg, &[])
+            .unwrap();
+
+        // Extract stock_id from response attributes
+        let stock_id: u64 = res
+            .events
+            .iter()
+            .flat_map(|event| &event.attributes)
+            .find(|attr| attr.key == "stock_id")
+            .unwrap()
+            .value
+            .parse()
+            .unwrap();
+
+        stock_ids.push(stock_id);
+    }
+
+    // Get ID of the 7th stock of the main influencer for start_after parameter
+    let start_after = stock_ids[6];
 
     let query_msg = QueryMsg::GetStocksByInfluencer {
         influencer: influencer.clone(),
@@ -236,7 +291,7 @@ fn test_get_stocks_by_influencer_with_start_after() {
         .unwrap();
 
     // Verify we get only stocks with IDs less than start_after
-    assert_eq!(response.stocks.len(), 2);
+    assert_eq!(response.stocks.len(), 6);
 
     // Verify all stocks belong to the influencer and have ID less than start_after
     for stock in &response.stocks {

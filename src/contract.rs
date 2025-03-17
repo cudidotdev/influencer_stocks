@@ -42,7 +42,23 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::CreateStock { ticker } => execute::create_stock(deps, env, info, ticker),
+        ExecuteMsg::CreateStock { ticker } => {
+            execute::stocks::create_stock(deps, env, info, ticker)
+        }
+
+        ExecuteMsg::StartAuction { stock_id } => {
+            execute::stocks::start_auction(deps, env, info, stock_id)
+        }
+
+        ExecuteMsg::EndAuction { stock_id } => {
+            execute::stocks::end_auction(deps, env, info, stock_id)
+        }
+
+        ExecuteMsg::PlaceBid {
+            stock_id,
+            price_per_share,
+            shares,
+        } => todo!(),
     }
 }
 
@@ -68,18 +84,23 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             limit,
             start_after,
         )?),
+
+        QueryMsg::GetActiveAuctions { limit, start_after } => {
+            to_json_binary(&query::get_active_auctions(deps, env, limit, start_after)?)
+        }
+
+        QueryMsg::GetExpiredActiveAuctions { limit, start_after } => to_json_binary(
+            &query::get_expired_active_auctions(deps, env, limit, start_after)?,
+        ),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::msg::GetStockByIdResponse;
-    use crate::state::Stock;
     use crate::utils;
+    use cosmwasm_std::coins;
     use cosmwasm_std::testing::{message_info, mock_dependencies, mock_env};
-    use cosmwasm_std::{coins, from_json};
-    use execute::TOTAL_SHARES;
 
     #[test]
     fn proper_initialization() {
@@ -108,68 +129,4 @@ mod tests {
             sender.as_str()
         ));
     }
-
-    #[test]
-    fn test_create_and_query_stock_by_id() {
-        let mut deps = mock_dependencies();
-
-        let creator = deps.api.addr_make("creator");
-        let msg = InstantiateMsg {};
-        let info = message_info(&creator, &coins(1000, "token"));
-
-        // we can just call .unwrap() to assert this was a success
-        instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-        let anyone = deps.api.addr_make("anyone");
-        let ticker = "TEST".to_owned();
-        let msg = ExecuteMsg::CreateStock {
-            ticker: ticker.clone(),
-        };
-        let info = message_info(&anyone, &coins(100, "token"));
-
-        // we can just call .unwrap() to assert this was a success
-        let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-        let stock_id: u64 = res
-            .attributes
-            .iter()
-            .find(|attr| attr.key == "stock_id".to_owned())
-            .unwrap()
-            .value
-            //convert from string to u64
-            .parse()
-            .unwrap();
-
-        // assert that the stock_id starts at 1
-        assert_eq!(stock_id, 1);
-
-        // let's get the stock by the stock_id
-        let res = query(
-            deps.as_ref(),
-            mock_env(),
-            QueryMsg::GetStockById { stock_id },
-        )
-        .unwrap();
-
-        let value: GetStockByIdResponse = from_json(&res).unwrap();
-
-        assert_eq!(
-            GetStockByIdResponse {
-                stock: Stock {
-                    id: stock_id,
-                    ticker,
-                    influencer: anyone,
-                    total_shares: TOTAL_SHARES,
-                    auction_active: false,
-                    auction_start: None,
-                    auction_end: None,
-                    created_at: value.clone().stock.created_at
-                }
-            },
-            value
-        );
-    }
-
-    #[test]
-    fn test_create_all_stocks() {}
 }

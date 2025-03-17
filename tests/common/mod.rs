@@ -1,4 +1,4 @@
-use cosmwasm_std::{coins, Addr, Attribute, Empty};
+use cosmwasm_std::{coins, Addr, Empty};
 use cw_multi_test::{App, Contract, ContractWrapper};
 use influencer_stocks::contract;
 

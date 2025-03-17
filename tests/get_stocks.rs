@@ -1,5 +1,5 @@
-use common::{contract_code, setup_app, DENOM};
-use cosmwasm_std::{coins, Addr};
+use common::{contract_code, setup_app};
+use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
 use influencer_stocks::msg::{
     ExecuteMsg, GetStockByIdResponse, GetStocksResponse, InstantiateMsg, QueryMsg,
@@ -98,12 +98,6 @@ fn test_get_all_stocks() {
         let influencer = Addr::unchecked(format!("influencer{}", i));
         influencers.push(influencer.clone());
 
-        // Fund influencer accounts for gas fees
-        for influencer in &influencers {
-            app.send_tokens(vault.clone(), influencer.clone(), &coins(100, DENOM))
-                .unwrap();
-        }
-
         // Create stock
         let ticker = format!("INFL{}", i);
         let create_msg = ExecuteMsg::CreateStock {
@@ -159,10 +153,6 @@ fn test_get_all_stocks_with_limit() {
 
     for i in 1..=num_stocks {
         let influencer = Addr::unchecked(format!("influencer{}", i));
-
-        // Fund influencer accounts for gas fees
-        app.send_tokens(vault.clone(), influencer.clone(), &coins(100, DENOM))
-            .unwrap();
 
         // Create stock
         let ticker = format!("INFL{}", i);
@@ -220,9 +210,6 @@ fn test_get_all_stocks_with_start_after() {
     for i in 1..=num_stocks {
         let influencer = Addr::unchecked(format!("influencer{}", i));
 
-        app.send_tokens(vault.clone(), influencer.clone(), &coins(100, DENOM))
-            .unwrap();
-
         // Create stock
         let ticker = format!("INFL{}", i);
         let create_msg = ExecuteMsg::CreateStock {
@@ -278,10 +265,6 @@ fn test_get_all_stocks_with_limit_and_start_after() {
 
     for i in 1..=num_stocks {
         let influencer = Addr::unchecked(format!("influencer{}", i));
-
-        // Fund influencer accounts for gas fees
-        app.send_tokens(vault.clone(), influencer.clone(), &coins(100, DENOM))
-            .unwrap();
 
         // Create stock
         let ticker = format!("INFL{}", i);

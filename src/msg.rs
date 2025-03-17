@@ -8,7 +8,23 @@ pub struct InstantiateMsg {}
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    CreateStock { ticker: String },
+    CreateStock {
+        ticker: String,
+    },
+
+    StartAuction {
+        stock_id: u64,
+    },
+
+    EndAuction {
+        stock_id: u64,
+    },
+
+    PlaceBid {
+        stock_id: u64,
+        price_per_share: u128,
+        shares: u64,
+    },
 }
 
 #[cw_serde]
@@ -27,6 +43,18 @@ pub enum QueryMsg {
     #[returns(GetStocksResponse)]
     GetStocksByInfluencer {
         influencer: Addr,
+        limit: Option<usize>,
+        start_after: Option<u64>,
+    },
+
+    #[returns(GetStocksResponse)]
+    GetActiveAuctions {
+        limit: Option<usize>,
+        start_after: Option<u64>,
+    },
+
+    #[returns(GetStocksResponse)]
+    GetExpiredActiveAuctions {
         limit: Option<usize>,
         start_after: Option<u64>,
     },

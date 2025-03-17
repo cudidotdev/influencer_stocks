@@ -1,5 +1,5 @@
-use common::{contract_code, setup_app, DENOM};
-use cosmwasm_std::{coins, Addr};
+use common::{contract_code, setup_app};
+use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
 use influencer_stocks::{
     contract::execute::TOTAL_SHARES,
@@ -28,10 +28,6 @@ fn test_create_and_query_stock_by_id() {
         .unwrap();
 
     let influencer = Addr::unchecked("influencer");
-
-    // Send tokens to influencer for gas fees
-    app.send_tokens(vault.clone(), influencer.clone(), &coins(100, DENOM))
-        .unwrap();
 
     // Create a stock
     let ticker = "INFL1".to_string();
@@ -71,9 +67,9 @@ fn test_create_and_query_stock_by_id() {
                 ticker,
                 influencer,
                 total_shares: TOTAL_SHARES,
-                auction_active: false,
                 auction_start: None,
                 auction_end: None,
+                auction_active: 0,
                 created_at: response.clone().stock.created_at
             }
         },
@@ -105,12 +101,6 @@ fn test_create_multiple_stocks() {
         Addr::unchecked("influencer2"),
         Addr::unchecked("influencer3"),
     ];
-
-    // Fund influencer accounts for gas fees
-    for influencer in &influencers {
-        app.send_tokens(vault.clone(), influencer.clone(), &coins(100, DENOM))
-            .unwrap();
-    }
 
     let tickers = vec!["INFL1", "INFL2", "INFL3"];
 

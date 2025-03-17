@@ -7,7 +7,13 @@ pub enum ContractError {
     Std(#[from] StdError),
 
     #[error("Unauthorized")]
-    Unauthorized {},
+    Unauthorized,
+
+    #[error("{0} not found")]
+    NotFound(String),
+
+    #[error("{0}")]
+    GenericError(String),
     // Add any other custom errors you like here.
     // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
 }
