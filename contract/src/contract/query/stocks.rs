@@ -66,13 +66,17 @@ pub fn get_all_stocks(
             stocks = stocks
                 .into_iter()
                 // If auction has ended
-                .filter(|stock| stock.auction_end < Some(current_time))
+                .filter(|stock| {
+                    stock.auction_end.is_some() && stock.auction_end <= Some(current_time)
+                })
                 .collect();
         } else {
             stocks = stocks
                 .into_iter()
                 // If auction not ended
-                .filter(|stock| !(stock.auction_end < Some(current_time)))
+                .filter(|stock| {
+                    !(stock.auction_end.is_some() && stock.auction_end <= Some(current_time))
+                })
                 .collect();
         }
     }

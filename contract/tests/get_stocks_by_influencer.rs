@@ -110,6 +110,39 @@ fn test_get_stocks_by_influencer() {
 }
 
 #[test]
+fn test_get_stocks_by_influencer_empty() {
+    let (mut app, vault) = setup_app();
+
+    // Store the contract code and instantiate
+    let code_id = app.store_code(contract_code());
+    let contract_addr = app
+        .instantiate_contract(
+            code_id,
+            vault.clone(),
+            &InstantiateMsg {},
+            &[],
+            "Influencer Stocks",
+            None,
+        )
+        .unwrap();
+
+    // Query stocks for a non-existent influencer
+    let influencer = Addr::unchecked("non_existent_influencer");
+    let query_msg = QueryMsg::GetStocksByInfluencer {
+        influencer,
+        start_after: None,
+    };
+
+    let response: GetStocksResponse = app
+        .wrap()
+        .query_wasm_smart(contract_addr.clone(), &query_msg)
+        .unwrap();
+
+    // Verify empty list
+    assert_eq!(response.stocks.len(), 0);
+}
+
+#[test]
 fn test_get_stocks_by_influencer_with_start_after() {
     let (mut app, vault) = setup_app();
 
