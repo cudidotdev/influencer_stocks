@@ -80,7 +80,7 @@ export function BidsTable() {
           {bids.length === 0 ? (
             <TableRow>
               <TableCell colSpan={8} className="text-center">
-                You haven't placed any bids yet
+                You haven&apos;t placed any bids yet
               </TableCell>
             </TableRow>
           ) : (

@@ -91,10 +91,16 @@ export function OrdersTable() {
         value={orderType}
         onValueChange={(value) => setOrderType(value as "all" | "buy" | "sell")}
       >
-        <TabsList className="mb-4">
-          <TabsTrigger value="all">All Orders</TabsTrigger>
-          <TabsTrigger value="buy">Buy Orders</TabsTrigger>
-          <TabsTrigger value="sell">Sell Orders</TabsTrigger>
+        <TabsList className="mb-4 !h-fit !p-1">
+          <TabsTrigger value="all" className="px-6 py-1.5 cursor-pointer">
+            All Orders
+          </TabsTrigger>
+          <TabsTrigger value="buy" className="px-6 py-1.5 cursor-pointer">
+            Buy Orders
+          </TabsTrigger>
+          <TabsTrigger value="sell" className="px-6 py-1.5 cursor-pointer">
+            Sell Orders
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 

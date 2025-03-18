@@ -82,7 +82,7 @@ export function SharesTable() {
           {shares.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="text-center">
-                You don't own any shares yet
+                You don&apos;t own any shares yet
               </TableCell>
             </TableRow>
           ) : (
