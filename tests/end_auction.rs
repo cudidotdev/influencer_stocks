@@ -7,7 +7,6 @@ use influencer_stocks::{
         ExecuteMsg, GetBidsResponse, GetSharesResponse, GetStockByIdResponse, InstantiateMsg,
         QueryMsg,
     },
-    state::Share,
 };
 
 mod common;
