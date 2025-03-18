@@ -60,8 +60,9 @@ fn test_get_all_stocks_empty() {
 
     // Query all stocks when none exist
     let query_msg = QueryMsg::GetAllStocks {
-        limit: None,
         start_after: None,
+        in_auction: None,
+        in_sale: None,
     };
 
     let response: GetStocksResponse = app
@@ -110,8 +111,9 @@ fn test_get_all_stocks() {
 
     // Query all stocks
     let query_msg = QueryMsg::GetAllStocks {
-        limit: None,
         start_after: None,
+        in_auction: None,
+        in_sale: None,
     };
 
     let response: GetStocksResponse = app
@@ -128,62 +130,6 @@ fn test_get_all_stocks() {
         assert_eq!(stock.id, expected_id);
         assert_eq!(stock.ticker, format!("INFL{}", expected_id));
         assert_eq!(stock.influencer, influencers[expected_id as usize - 1]);
-    }
-}
-
-#[test]
-fn test_get_all_stocks_with_limit() {
-    let (mut app, vault) = setup_app();
-
-    // Store the contract code and instantiate
-    let code_id = app.store_code(contract_code());
-    let contract_addr = app
-        .instantiate_contract(
-            code_id,
-            vault.clone(),
-            &InstantiateMsg {},
-            &[],
-            "Influencer Stocks",
-            None,
-        )
-        .unwrap();
-
-    // Create 10 stocks
-    let num_stocks = 10;
-
-    for i in 1..=num_stocks {
-        let influencer = Addr::unchecked(format!("influencer{}", i));
-
-        // Create stock
-        let ticker = format!("INFL{}", i);
-        let create_msg = ExecuteMsg::CreateStock {
-            ticker: ticker.clone(),
-        };
-
-        app.execute_contract(influencer.clone(), contract_addr.clone(), &create_msg, &[])
-            .unwrap();
-    }
-
-    // Query with limit
-    let limit = 3;
-    let query_msg = QueryMsg::GetAllStocks {
-        limit: Some(limit),
-        start_after: None,
-    };
-
-    let response: GetStocksResponse = app
-        .wrap()
-        .query_wasm_smart(contract_addr.clone(), &query_msg)
-        .unwrap();
-
-    // Verify number of stocks respects limit
-    assert_eq!(response.stocks.len(), limit);
-
-    // Verify stocks are in descending order by ID
-    for (i, stock) in response.stocks.iter().enumerate() {
-        let expected_id = num_stocks - i as u64;
-        assert_eq!(stock.id, expected_id);
-        assert_eq!(stock.ticker, format!("INFL{}", expected_id));
     }
 }
 
@@ -223,8 +169,9 @@ fn test_get_all_stocks_with_start_after() {
     // Query with start_after
     let start_after = 7; // Skip stocks with IDs 10, 9, 8, 7
     let query_msg = QueryMsg::GetAllStocks {
-        limit: None,
         start_after: Some(start_after),
+        in_auction: None,
+        in_sale: None,
     };
 
     let response: GetStocksResponse = app
@@ -238,64 +185,6 @@ fn test_get_all_stocks_with_start_after() {
     // Verify stocks are in descending order by ID
     for (i, stock) in response.stocks.iter().enumerate() {
         let expected_id = 6 - i as u64;
-        assert_eq!(stock.id, expected_id);
-        assert_eq!(stock.ticker, format!("INFL{}", expected_id));
-    }
-}
-
-#[test]
-fn test_get_all_stocks_with_limit_and_start_after() {
-    let (mut app, vault) = setup_app();
-
-    // Store the contract code and instantiate
-    let code_id = app.store_code(contract_code());
-    let contract_addr = app
-        .instantiate_contract(
-            code_id,
-            vault.clone(),
-            &InstantiateMsg {},
-            &[],
-            "Influencer Stocks",
-            None,
-        )
-        .unwrap();
-
-    // Create 10 stocks
-    let num_stocks = 10;
-
-    for i in 1..=num_stocks {
-        let influencer = Addr::unchecked(format!("influencer{}", i));
-
-        // Create stock
-        let ticker = format!("INFL{}", i);
-        let create_msg = ExecuteMsg::CreateStock {
-            ticker: ticker.clone(),
-        };
-
-        app.execute_contract(influencer.clone(), contract_addr.clone(), &create_msg, &[])
-            .unwrap();
-    }
-
-    // Query with both limit and start_after
-    let limit = 3;
-    let start_after = 8; // Skip stocks with IDs 10, 9, 8
-
-    let query_msg = QueryMsg::GetAllStocks {
-        limit: Some(limit),
-        start_after: Some(start_after),
-    };
-
-    let response: GetStocksResponse = app
-        .wrap()
-        .query_wasm_smart(contract_addr.clone(), &query_msg)
-        .unwrap();
-
-    // Verify correct number of stocks returned (IDs 7, 6, 5)
-    assert_eq!(response.stocks.len(), limit);
-
-    // Verify stocks are in descending order by ID
-    for (i, stock) in response.stocks.iter().enumerate() {
-        let expected_id = start_after - 1 - i as u64;
         assert_eq!(stock.id, expected_id);
         assert_eq!(stock.ticker, format!("INFL{}", expected_id));
     }
@@ -322,7 +211,6 @@ fn test_get_stocks_by_influencer_empty() {
     let influencer = Addr::unchecked("non_existent_influencer");
     let query_msg = QueryMsg::GetStocksByInfluencer {
         influencer,
-        limit: None,
         start_after: None,
     };
 

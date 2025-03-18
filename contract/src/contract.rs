@@ -73,29 +73,27 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_json_binary(&query::stocks::get_stock_by_id(deps, env, stock_id)?)
         }
 
-        QueryMsg::GetAllStocks { limit, start_after } => to_json_binary(
-            &query::stocks::get_all_stocks(deps, env, limit, start_after)?,
-        ),
+        QueryMsg::GetAllStocks {
+            start_after,
+            in_auction,
+            in_sale,
+        } => to_json_binary(&query::stocks::get_all_stocks(
+            deps,
+            env,
+            start_after,
+            in_auction,
+            in_sale,
+        )?),
 
         QueryMsg::GetStocksByInfluencer {
             influencer,
-            limit,
             start_after,
         } => to_json_binary(&query::stocks::get_stocks_by_influencer(
             deps,
             env,
             influencer,
-            limit,
             start_after,
         )?),
-
-        QueryMsg::GetActiveAuctions { limit, start_after } => to_json_binary(
-            &query::stocks::get_active_auctions(deps, env, limit, start_after)?,
-        ),
-
-        QueryMsg::GetExpiredActiveAuctions { limit, start_after } => to_json_binary(
-            &query::stocks::get_expired_active_auctions(deps, env, limit, start_after)?,
-        ),
 
         QueryMsg::GetBidById { bid_id } => {
             to_json_binary(&query::bids::get_bid_by_id(deps, env, bid_id)?)

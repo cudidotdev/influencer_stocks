@@ -36,26 +36,14 @@ pub enum QueryMsg {
 
     #[returns(GetStocksResponse)]
     GetAllStocks {
-        limit: Option<usize>,
         start_after: Option<u64>,
+        in_auction: Option<bool>,
+        in_sale: Option<bool>,
     },
 
     #[returns(GetStocksResponse)]
     GetStocksByInfluencer {
         influencer: Addr,
-        limit: Option<usize>,
-        start_after: Option<u64>,
-    },
-
-    #[returns(GetStocksResponse)]
-    GetActiveAuctions {
-        limit: Option<usize>,
-        start_after: Option<u64>,
-    },
-
-    #[returns(GetStocksResponse)]
-    GetExpiredActiveAuctions {
-        limit: Option<usize>,
         start_after: Option<u64>,
     },
 

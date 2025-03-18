@@ -420,7 +420,7 @@ fn test_auction_inactive() {
     assert!(err
         .root_cause()
         .to_string()
-        .contains("Auction is not active"));
+        .contains("Stock is yet to be auctioned"));
 }
 
 #[test]

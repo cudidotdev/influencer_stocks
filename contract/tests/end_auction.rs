@@ -95,7 +95,7 @@ fn test_end_auction_success() {
         .query_wasm_smart(contract_addr.clone(), &query_msg)
         .unwrap();
 
-    assert_eq!(stock_response.stock.auction_active, 0);
+    assert!(stock_response.stock.auction_end <= Some(app.block_info().time.nanos() / 1_000_000));
 }
 
 #[test]
@@ -216,7 +216,7 @@ fn test_place_bids_and_end_auction_success() {
         .query_wasm_smart(contract_addr.clone(), &query_msg)
         .unwrap();
 
-    assert_eq!(stock_response.stock.auction_active, 0);
+    assert!(stock_response.stock.auction_end <= Some(app.block_info().time.nanos() / 1_000_000));
 
     let bids_response: GetBidsResponse = app
         .wrap()
@@ -331,7 +331,7 @@ fn test_end_auction_by_owner() {
         .query_wasm_smart(contract_addr.clone(), &query_msg)
         .unwrap();
 
-    assert_eq!(stock_response.stock.auction_active, 0);
+    assert!(stock_response.stock.auction_end <= Some(app.block_info().time.nanos() / 1_000_000));
 }
 
 #[test]
@@ -455,7 +455,7 @@ fn test_end_auction_inactive() {
     assert!(err
         .root_cause()
         .to_string()
-        .contains("Auction is not active"));
+        .contains("Stock is yet to be auctioned"));
 }
 
 #[test]

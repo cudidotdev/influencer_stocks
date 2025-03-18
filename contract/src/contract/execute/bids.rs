@@ -39,17 +39,19 @@ pub fn place_bid(
         .load(deps.storage, &stock_id_bytes)
         .map_err(|_| ContractError::NotFound(f!("Stock with id {stock_id}")))?;
 
-    // Check if auction is active
-    if stock.auction_active != 1 {
-        return Err(ContractError::GenericError(f!("Auction is not active")));
-    }
-
     // Check if auction has expired
     let current_time = env.block.time.nanos() / 1_000_000;
     if let Some(end_timestamp) = stock.auction_end {
         if current_time > end_timestamp {
             return Err(ContractError::GenericError(f!("Auction has ended")));
         }
+    }
+
+    // Check if auction hasn't started
+    if stock.auction_start.is_none() {
+        return Err(ContractError::GenericError(f!(
+            "Stock is yet to be auctioned"
+        )));
     }
 
     // Get the current minimum bid price

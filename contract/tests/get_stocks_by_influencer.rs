@@ -51,7 +51,6 @@ fn test_get_stocks_by_influencer() {
     // Query stocks for influencer1
     let query_msg = QueryMsg::GetStocksByInfluencer {
         influencer: influencer1.clone(),
-        limit: None,
         start_after: None,
     };
 
@@ -77,7 +76,6 @@ fn test_get_stocks_by_influencer() {
     // Query stocks for influencer2
     let query_msg = QueryMsg::GetStocksByInfluencer {
         influencer: influencer2.clone(),
-        limit: None,
         start_after: None,
     };
 
@@ -97,8 +95,9 @@ fn test_get_stocks_by_influencer() {
 
     // Verify total stocks across all influencers
     let query_msg = QueryMsg::GetAllStocks {
-        limit: None,
         start_after: None,
+        in_sale: None,
+        in_auction: None,
     };
 
     let response: GetStocksResponse = app
@@ -108,81 +107,6 @@ fn test_get_stocks_by_influencer() {
 
     // Total should be sum of all influencer stock counts (3+2=6)
     assert_eq!(response.stocks.len(), 5);
-}
-
-#[test]
-fn test_get_stocks_by_influencer_with_limit() {
-    let (mut app, vault) = setup_app();
-
-    // Store the contract code and instantiate
-    let code_id = app.store_code(contract_code());
-    let contract_addr = app
-        .instantiate_contract(
-            code_id,
-            vault.clone(),
-            &InstantiateMsg {},
-            &[],
-            "Influencer Stocks",
-            None,
-        )
-        .unwrap();
-
-    // Create 5 stocks for the main influencer
-    let influencer = Addr::unchecked("influencer1");
-
-    for i in 1..=5 {
-        let ticker = format!("INF1_{}", i);
-        let create_msg = ExecuteMsg::CreateStock {
-            ticker: ticker.clone(),
-        };
-
-        app.execute_contract(influencer.clone(), contract_addr.clone(), &create_msg, &[])
-            .unwrap();
-    }
-
-    // Create 5 stocks for the another influencer
-    let different_influencer = Addr::unchecked("influencer2");
-
-    for i in 1..=5 {
-        let ticker = format!("INF2_{}", i);
-        let create_msg = ExecuteMsg::CreateStock {
-            ticker: ticker.clone(),
-        };
-
-        app.execute_contract(
-            different_influencer.clone(),
-            contract_addr.clone(),
-            &create_msg,
-            &[],
-        )
-        .unwrap();
-    }
-
-    // Query with limit
-    let limit = 3;
-    let query_msg = QueryMsg::GetStocksByInfluencer {
-        influencer: influencer.clone(),
-        limit: Some(limit),
-        start_after: None,
-    };
-
-    let response: GetStocksResponse = app
-        .wrap()
-        .query_wasm_smart(contract_addr.clone(), &query_msg)
-        .unwrap();
-
-    // Verify number of stocks respects limit
-    assert_eq!(response.stocks.len(), limit);
-
-    // Verify all stocks belong to the main influencer
-    for stock in &response.stocks {
-        assert_eq!(stock.influencer, influencer);
-    }
-
-    // Verify stocks are in descending order by ID
-    for i in 0..response.stocks.len() - 1 {
-        assert!(response.stocks[i].id > response.stocks[i + 1].id);
-    }
 }
 
 #[test]
@@ -281,7 +205,6 @@ fn test_get_stocks_by_influencer_with_start_after() {
 
     let query_msg = QueryMsg::GetStocksByInfluencer {
         influencer: influencer.clone(),
-        limit: None,
         start_after: Some(start_after),
     };
 

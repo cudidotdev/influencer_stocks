@@ -35,7 +35,6 @@ pub fn create_stock(
         total_shares: TOTAL_SHARES,
         auction_start: None,
         auction_end: None,
-        auction_active: 0,
         created_at,
     };
 
@@ -73,30 +72,25 @@ pub fn start_auction(
     // Get current blockchain time in milliseconds
     let current_time = env.block.time.nanos() / 1_000_000; // Convert nanos to millis
 
-    // Check if auction has expired
+    // Check auction is ended and stock is in sale
     if let Some(end_timestamp) = stock.auction_end {
         if current_time > end_timestamp {
-            // Update auction state to inactive and save
-            stock.auction_active = 0;
-            STOCKS.save(deps.storage, &stock_id_bytes, &stock)?;
-
-            // Return Ok with an informative response rather than an error
-            return Ok(Response::new()
-                .add_attribute("action", "auction_expired")
-                .add_attribute("stock_id", stock_id.to_string())
-                .add_attribute("auction_end", end_timestamp.to_string()));
+            return Err(ContractError::GenericError(f!(
+                "Stock has already been auctioned and in sale"
+            )));
         }
     }
 
-    // If auction is already active, return an error
-    if stock.auction_active == 1 {
-        return Err(ContractError::GenericError(f!("Auction already active")));
+    // If stock is been auctioned
+    if stock.auction_start.is_some() {
+        return Err(ContractError::GenericError(f!(
+            "Stock is already been auctioned"
+        )));
     }
 
     // Set auction start time to current blockchain time
     let start_timestamp = current_time;
     stock.auction_start = Some(current_time);
-    stock.auction_active = 1;
 
     // Calculate auction end time (24 hours later)
     let end_timestamp = start_timestamp + (24 * 60 * 60 * 1000); // 24 hours in milliseconds
@@ -154,17 +148,29 @@ pub fn end_auction(
         return Err(ContractError::Unauthorized);
     }
 
-    // Check if auction is active
-    if stock.auction_active == 0 {
-        return Err(ContractError::GenericError(f!("Auction is not active")));
+    // Get current blockchain time in milliseconds
+    let current_time = env.block.time.nanos() / 1_000_000; // Convert nanos to millis
+
+    // Check if auction is ended and stock is in sale
+    if let Some(end_timestamp) = stock.auction_end {
+        if current_time > end_timestamp {
+            return Err(ContractError::GenericError(f!(
+                "Stock has already been auctioned and in sale"
+            )));
+        }
+    }
+
+    // Check stock hasn't started auction
+    if stock.auction_start.is_none() {
+        return Err(ContractError::GenericError(f!(
+            "Stock is yet to be auctioned"
+        )));
     }
 
     // Update auction end time to current block time
-    let current_time = env.block.time.nanos() / 1_000_000; // Convert to milliseconds for consistency
     stock.auction_end = Some(current_time);
 
     // End the auction
-    stock.auction_active = 0;
     STOCKS.save(deps.storage, &stock_id_bytes, &stock)?;
 
     // Create stakes from winning (open) bids

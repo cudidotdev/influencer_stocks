@@ -19,7 +19,6 @@ pub struct Stock {
     pub total_shares: u64,
     pub auction_start: Option<u64>,
     pub auction_end: Option<u64>,
-    pub auction_active: u8,
     pub created_at: u64,
 }
 
@@ -27,15 +26,11 @@ pub struct Stock {
 pub struct StockIndexes<'a> {
     // Secondary indexes
     pub influencer: MultiIndex<'a, Addr, Stock, &'a [u8]>,
-    pub auction_active: MultiIndex<'a, u8, Stock, &'a [u8]>,
 }
 
 impl IndexList<Stock> for StockIndexes<'_> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Stock>> + '_> {
-        let v = vec![
-            &self.influencer as &dyn Index<Stock>,
-            &self.auction_active as &dyn Index<Stock>,
-        ];
+        let v = vec![&self.influencer as &dyn Index<Stock>];
         Box::new(v.into_iter())
     }
 }
@@ -46,11 +41,6 @@ pub const STOCK_INDEXES: StockIndexes = StockIndexes {
         |_pk, stock| stock.influencer.clone(),
         "stocks",
         "stocks__influencer",
-    ),
-    auction_active: MultiIndex::new(
-        |_pk, stock| stock.auction_active,
-        "stocks",
-        "stocks__auction_end",
     ),
 };
 

@@ -77,7 +77,6 @@ fn test_start_auction_success() {
 
     assert!(stock_response.stock.auction_start.is_some());
     assert!(stock_response.stock.auction_end.is_some());
-    assert!(stock_response.stock.auction_active == 1);
 }
 
 #[test]
@@ -201,7 +200,7 @@ fn test_start_auction_already_active() {
     assert!(err
         .root_cause()
         .to_string()
-        .contains("Auction already active"));
+        .contains("Stock is already been auctioned"));
 }
 
 #[test]
@@ -294,36 +293,25 @@ fn test_start_auction_after_end() {
     )
     .unwrap();
 
-    // Query stock to get auction data
-    let query_msg = QueryMsg::GetStockById { stock_id };
-
     // Artificially advance block time to after auction end
     app.update_block(|block| {
         block.time = block.time.plus_seconds(24 * 60 * 60 + 1); // 24 hours + 1 second
     });
 
     // Try to restart auction
-    let res = app
+    let err = app
         .execute_contract(
             influencer.clone(),
             contract_addr.clone(),
             &start_auction_msg,
             &[],
         )
-        .unwrap();
+        .unwrap_err();
 
-    assert!(res
-        .custom_attrs(1)
-        .iter()
-        .any(|attr| attr.key == "action" && attr.value == "auction_expired"));
-
-    // Verify auction is marked as inactive
-    let stock_response: GetStockByIdResponse = app
-        .wrap()
-        .query_wasm_smart(contract_addr.clone(), &query_msg)
-        .unwrap();
-
-    assert!(stock_response.stock.auction_active == 0);
+    assert!(err
+        .root_cause()
+        .to_string()
+        .contains("Stock has already been auctioned and in sale"));
 }
 
 #[test]
