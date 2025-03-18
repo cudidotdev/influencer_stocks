@@ -1,8 +1,6 @@
 use cosmwasm_std::{coins, Addr, Empty};
 use cw_multi_test::{App, Contract, ContractWrapper};
-use influencer_stocks::contract;
-
-pub const DENOM: &str = "uhuahua";
+use influencer_stocks::contract::{self, DENOM};
 
 // Create test environment with initial balances
 pub fn setup_app() -> (App, Addr) {
@@ -15,7 +13,7 @@ pub fn setup_app() -> (App, Addr) {
     app.init_modules(|router, _, storage| {
         router
             .bank
-            .init_balance(storage, &vault, coins(1_000_000, DENOM))
+            .init_balance(storage, &vault, coins(1_00_000_000_000, DENOM))
             .unwrap();
     });
 

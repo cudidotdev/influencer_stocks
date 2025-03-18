@@ -1,19 +1,12 @@
-use cosmwasm_std::{
-    coins, BankMsg, CosmosMsg, DepsMut, Env, MessageInfo, Order, Response, StdResult,
-};
+use cosmwasm_std::{coins, Addr, BankMsg, CosmosMsg, DepsMut, Env, MessageInfo, Response};
 
 use crate::{
-    state::{Bid, BIDS, BID_COUNT, STATE, STOCKS},
+    contract::{query, DENOM},
+    state::{Bid, BIDS, BID_COUNT, STOCKS},
     ContractError,
 };
 
 use format as f;
-
-// Minimum bid increment (0.000001 huahua)
-const MIN_BID_INCREMENT: u128 = 1;
-
-// Denomination of the token we're using
-const DENOM: &str = "uhuahua";
 
 pub fn place_bid(
     deps: DepsMut,
@@ -23,16 +16,15 @@ pub fn place_bid(
     price_per_share: u128,
     shares: u64,
 ) -> Result<Response, ContractError> {
-    let state = STATE.load(deps.storage)?;
-
     // Check if funds are sent
     let sent_funds = info.funds.iter().find(|coin| coin.denom == DENOM);
+
     if sent_funds.is_none() {
         return Err(ContractError::GenericError(f!("No {DENOM} sent")));
     }
 
     let sent_amount = sent_funds.unwrap().amount.u128();
-    let expected_amount = (price_per_share * shares as u128);
+    let expected_amount = price_per_share * shares as u128;
 
     // Validate funds
     if sent_amount < expected_amount {
@@ -60,33 +52,12 @@ pub fn place_bid(
         }
     }
 
-    // Check if the user already has a bid for this stock
-    let existing_bids = BIDS
-        .idx
-        .bidder
-        .prefix(info.sender.clone())
-        .range(deps.storage, None, None, Order::Ascending)
-        .filter(|item| match item {
-            Ok((_, bid)) => bid.stock_id == stock_id,
-            _ => false,
-        })
-        .collect::<StdResult<Vec<_>>>()?;
-
-    if !existing_bids.is_empty() {
-        // Instead of placing a new bid, update the existing one
-        return update_existing_bid(
-            deps,
-            env,
-            info,
-            existing_bids[0].1.id,
-            price_per_share,
-            shares,
-            sent_amount,
-        );
-    }
-
     // Get the current minimum bid price
-    let min_bid_price = get_minimum_bid_price(deps.as_ref(), stock_id, shares)?;
+    let min_bid_price =
+        query::bids::get_minimum_bid_price(deps.as_ref(), env.clone(), stock_id, shares)?
+            .min_price
+            .parse()
+            .map_err(|_| ContractError::GenericError(f!("Price conversion error")))?;
 
     // Check if the bid price is greater than or equal to the minimum bid price
     if price_per_share < min_bid_price {
@@ -105,18 +76,59 @@ pub fn place_bid(
         bidder: info.sender.clone(),
         price_per_share,
         shares_requested: shares,
-        outbid_shares: 0,
-        total_amount: price_per_share * shares as u128,
+        remaining_shares: shares,
         created_at: current_time,
-        updated_at: current_time,
-        outbid: false,
+        open: 1,
+        active: true,
     };
 
     // Save the bid
     BIDS.save(deps.storage, &bid_id.to_be_bytes(), &bid)?;
 
+    // amount to send to influencer wallet
+    let mut influencer_pay = expected_amount;
+
+    // messages for funds disbursement
+    let mut messages = vec![];
+
+    // calculate excess amount sent by the user
+    let excess_amount = if sent_amount > expected_amount {
+        sent_amount - expected_amount
+    } else {
+        0
+    };
+
+    // If there's excess, send it back to the sender
+    if excess_amount > 0 {
+        messages.push(CosmosMsg::Bank(BankMsg::Send {
+            to_address: info.sender.to_string(),
+            amount: coins(excess_amount, DENOM),
+        }));
+    }
+
     // Process outbidding
-    let outbid_result = process_outbidding(deps, env, stock_id, bid_id)?;
+    let outbids = process_outbids(deps, env, bid_id, stock_id, shares)?;
+
+    // Refund outbids
+    for outbid in outbids {
+        if outbid.1 > 0 {
+            // subtract refund from influencer's pay
+            influencer_pay -= outbid.1;
+
+            messages.push(CosmosMsg::Bank(BankMsg::Send {
+                to_address: outbid.0.to_string(),
+                amount: coins(outbid.1, DENOM),
+            }));
+        }
+    }
+
+    // Transfer the influencer's pay to influencer
+    if influencer_pay > 0 {
+        messages.push(CosmosMsg::Bank(BankMsg::Send {
+            to_address: stock.influencer.to_string(),
+            amount: coins(influencer_pay, DENOM),
+        }));
+    }
 
     Ok(Response::new()
         .add_attribute("action", "place_bid")
@@ -129,12 +141,64 @@ pub fn place_bid(
             "total_amount",
             (price_per_share * shares as u128).to_string(),
         )
-        .add_attribute("outbid_bids", outbid_result.to_string())
-        .add_messages(vec![
-            // Transfer the funds to contract owner (vault)
-            CosmosMsg::Bank(BankMsg::Send {
-                to_address: state.owner.to_string(),
-                amount: coins(sent_amount, DENOM),
-            }),
-        ]))
+        .add_messages(messages))
+}
+
+fn process_outbids(
+    deps: DepsMut,
+    env: Env,
+    bid_id: u64,
+    stock_id: u64,
+    shares_requested: u64,
+) -> Result<Vec<(Addr, u128)>, ContractError> {
+    let mut available_shares = shares_requested;
+
+    // Get all open bids for this stock, ordered by price (ascending)
+    let open_bids = query::bids::get_open_bids_by_stock(deps.as_ref(), env, stock_id)?.bids;
+
+    let mut outbids = Vec::new();
+
+    // Start with loweset priced bids and work up
+    for mut bid in open_bids {
+        // Exclude the newly created bid
+        if bid.id == bid_id {
+            continue;
+        }
+
+        if available_shares <= bid.remaining_shares {
+            // calculate remaining_shares and add to outbids
+            let remaining_shares = bid.remaining_shares - available_shares;
+
+            outbids.push((
+                bid.bidder.clone(),
+                bid.price_per_share * available_shares as u128,
+            ));
+
+            // update remaining_shares
+            bid.remaining_shares = remaining_shares;
+            BIDS.save(deps.storage, &bid.id.to_be_bytes(), &bid)?;
+
+            break;
+        } else {
+            // update available_shares
+            available_shares -= bid.remaining_shares;
+
+            // add to outbid
+            outbids.push((
+                bid.bidder.clone(),
+                bid.price_per_share * bid.remaining_shares as u128,
+            ));
+
+            // updated remaining_shares
+            bid.remaining_shares = 0;
+
+            // close bid
+            bid.open = 0;
+
+            // save
+            BIDS.save(deps.storage, &bid.id.to_be_bytes(), &bid)?;
+        }
+    }
+
+    Ok(outbids)
 }

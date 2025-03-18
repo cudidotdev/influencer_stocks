@@ -1,7 +1,7 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
 use crate::{
-    state::{Stock, STATE, STOCKS, STOCK_COUNT},
+    state::{Bid, Stock, BIDS, BID_COUNT, STATE, STOCKS, STOCK_COUNT},
     ContractError,
 };
 
@@ -9,7 +9,7 @@ use format as f;
 
 // total shares for a stock fixed at 1_000_000 for now,
 // may be updated to vary based on creators choice
-pub const TOTAL_SHARES: u64 = 1_000_0000;
+pub const TOTAL_SHARES: u64 = 1_000_000;
 
 pub fn create_stock(
     deps: DepsMut,
@@ -94,7 +94,7 @@ pub fn start_auction(
 
     // Set auction start time to current blockchain time
     let start_timestamp = current_time;
-    stock.auction_start = Some(start_timestamp);
+    stock.auction_start = Some(current_time);
     stock.auction_active = 1;
 
     // Calculate auction end time (24 hours later)
@@ -103,6 +103,25 @@ pub fn start_auction(
 
     // Save updated stock
     STOCKS.save(deps.storage, &stock_id_bytes, &stock)?;
+
+    // Place inital bid with price set as 0
+    let bid_id = BID_COUNT.may_load(deps.storage)?.unwrap_or(0) + 1;
+    BID_COUNT.save(deps.storage, &bid_id)?;
+
+    let bid = Bid {
+        id: bid_id,
+        stock_id,
+        bidder: info.sender.clone(),
+        price_per_share: 0,
+        shares_requested: stock.total_shares,
+        remaining_shares: stock.total_shares,
+        created_at: current_time,
+        open: 1,
+        active: true,
+    };
+
+    // Save the bid
+    BIDS.save(deps.storage, &bid_id.to_be_bytes(), &bid)?;
 
     Ok(Response::new()
         .add_attribute("action", "start_auction")

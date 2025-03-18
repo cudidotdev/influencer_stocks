@@ -64,18 +64,18 @@ pub struct Bid {
     pub bidder: Addr,
     pub price_per_share: u128, // Price in smallest unit (e.g., uhuahua)
     pub shares_requested: u64,
-    pub outbid_shares: u64, // Number of shares that were outbid
-    pub total_amount: u128, // Total amount bid (price * shares)
+    pub remaining_shares: u64, // Number of shares that haven't been outbid
     pub created_at: u64,
-    pub updated_at: u64,
-    pub outbid: bool, // Whether the bid is has been outbidded
+    pub open: u8, // Whether the bid is has still open (has not been outbid)
+    pub active: bool, // Whether the stock is still in auction
+                  // (all inactive bids are closed)
 }
 
 // Index for Bids
 pub struct BidIndexes<'a> {
     pub stock_id: MultiIndex<'a, u64, Bid, &'a [u8]>,
     pub bidder: MultiIndex<'a, Addr, Bid, &'a [u8]>,
-    pub price: MultiIndex<'a, u128, Bid, &'a [u8]>,
+    pub stock_open: MultiIndex<'a, (u64, u8), Bid, &'a [u8]>,
 }
 
 impl IndexList<Bid> for BidIndexes<'_> {
@@ -83,7 +83,7 @@ impl IndexList<Bid> for BidIndexes<'_> {
         let v = vec![
             &self.stock_id as &dyn Index<Bid>,
             &self.bidder as &dyn Index<Bid>,
-            &self.price as &dyn Index<Bid>,
+            &self.stock_open as &dyn Index<Bid>,
         ];
         Box::new(v.into_iter())
     }
@@ -93,7 +93,11 @@ impl IndexList<Bid> for BidIndexes<'_> {
 pub const BID_INDEXES: BidIndexes = BidIndexes {
     stock_id: MultiIndex::new(|_pk, bid| bid.stock_id, "bids", "bids__stock_id"),
     bidder: MultiIndex::new(|_pk, bid| bid.bidder.clone(), "bids", "bids__bidder"),
-    price: MultiIndex::new(|_pk, bid| bid.price_per_share, "bids", "bids__price"),
+    stock_open: MultiIndex::new(
+        |_pk, bid| (bid.stock_id, bid.open),
+        "bids",
+        "bids__stock_open",
+    ),
 };
 
 pub const BIDS: IndexedMap<&[u8], Bid, BidIndexes> = IndexedMap::new("bids", BID_INDEXES);

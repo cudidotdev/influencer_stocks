@@ -2,7 +2,7 @@ use common::{contract_code, setup_app};
 use cosmwasm_std::Addr;
 use cw_multi_test::Executor;
 use influencer_stocks::{
-    contract::execute::TOTAL_SHARES,
+    contract::execute::stocks::TOTAL_SHARES,
     msg::{ExecuteMsg, GetStockByIdResponse, InstantiateMsg, QueryMsg},
     state::Stock,
 };

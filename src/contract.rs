@@ -2,6 +2,7 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
+use execute::bids::place_bid;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -9,6 +10,9 @@ use crate::state::{State, STATE};
 
 pub mod execute;
 pub mod query;
+
+// Denomination of the token we're using
+pub const DENOM: &str = "uhuahua";
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:influencer-stocks";
@@ -58,7 +62,7 @@ pub fn execute(
             stock_id,
             price_per_share,
             shares,
-        } => todo!(),
+        } => place_bid(deps, env, info, stock_id, price_per_share, shares),
     }
 }
 
@@ -66,18 +70,18 @@ pub fn execute(
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetStockById { stock_id } => {
-            to_json_binary(&query::get_stock_by_id(deps, env, stock_id)?)
+            to_json_binary(&query::stocks::get_stock_by_id(deps, env, stock_id)?)
         }
 
-        QueryMsg::GetAllStocks { limit, start_after } => {
-            to_json_binary(&query::get_all_stocks(deps, env, limit, start_after)?)
-        }
+        QueryMsg::GetAllStocks { limit, start_after } => to_json_binary(
+            &query::stocks::get_all_stocks(deps, env, limit, start_after)?,
+        ),
 
         QueryMsg::GetStocksByInfluencer {
             influencer,
             limit,
             start_after,
-        } => to_json_binary(&query::get_stocks_by_influencer(
+        } => to_json_binary(&query::stocks::get_stocks_by_influencer(
             deps,
             env,
             influencer,
@@ -85,13 +89,40 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_after,
         )?),
 
-        QueryMsg::GetActiveAuctions { limit, start_after } => {
-            to_json_binary(&query::get_active_auctions(deps, env, limit, start_after)?)
-        }
+        QueryMsg::GetActiveAuctions { limit, start_after } => to_json_binary(
+            &query::stocks::get_active_auctions(deps, env, limit, start_after)?,
+        ),
 
         QueryMsg::GetExpiredActiveAuctions { limit, start_after } => to_json_binary(
-            &query::get_expired_active_auctions(deps, env, limit, start_after)?,
+            &query::stocks::get_expired_active_auctions(deps, env, limit, start_after)?,
         ),
+
+        QueryMsg::GetBidById { bid_id } => {
+            to_json_binary(&query::bids::get_bid_by_id(deps, env, bid_id)?)
+        }
+
+        QueryMsg::GetBidsByBidder {
+            bidder,
+            is_open,
+            is_active,
+            stock_id,
+        } => to_json_binary(&query::bids::get_bids_by_bidder(
+            deps, env, bidder, is_open, is_active, stock_id,
+        )?),
+
+        QueryMsg::GetMinimumBidPrice {
+            stock_id,
+            shares_requested,
+        } => to_json_binary(&query::bids::get_minimum_bid_price(
+            deps,
+            env,
+            stock_id,
+            shares_requested,
+        )?),
+
+        QueryMsg::GetOpenBidsByStock { stock_id } => {
+            to_json_binary(&query::bids::get_open_bids_by_stock(deps, env, stock_id)?)
+        }
     }
 }
 
