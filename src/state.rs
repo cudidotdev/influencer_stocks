@@ -102,3 +102,36 @@ pub const BID_INDEXES: BidIndexes = BidIndexes {
 
 pub const BIDS: IndexedMap<&[u8], Bid, BidIndexes> = IndexedMap::new("bids", BID_INDEXES);
 pub const BID_COUNT: Item<u64> = Item::new("bid_count");
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+pub struct Share {
+    pub id: u64,
+    pub stock_id: u64,
+    pub no_of_shares: u64,
+    pub owner: Addr,
+}
+
+// Index for Stakes
+pub struct ShareIndexes<'a> {
+    pub stock_id: MultiIndex<'a, u64, Share, &'a [u8]>,
+    pub owner: MultiIndex<'a, Addr, Share, &'a [u8]>,
+}
+
+impl IndexList<Share> for ShareIndexes<'_> {
+    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Share>> + '_> {
+        let v = vec![
+            &self.stock_id as &dyn Index<Share>,
+            &self.owner as &dyn Index<Share>,
+        ];
+        Box::new(v.into_iter())
+    }
+}
+
+// Create indexes
+pub const SHARE_INDEXES: ShareIndexes = ShareIndexes {
+    stock_id: MultiIndex::new(|_pk, share| share.stock_id, "share", "share__stock_id"),
+    owner: MultiIndex::new(|_pk, share| share.owner.clone(), "share", "share__owner"),
+};
+
+pub const SHARES: IndexedMap<&[u8], Share, ShareIndexes> = IndexedMap::new("share", SHARE_INDEXES);
+pub const SHARE_COUNT: Item<u64> = Item::new("share_count");

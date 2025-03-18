@@ -114,3 +114,16 @@ pub fn get_minimum_bid_price(
         shares_requested,
     })
 }
+
+pub fn get_bids_by_stock_id(deps: Deps, _env: Env, stock_id: u64) -> StdResult<GetBidsResponse> {
+    let bids = BIDS
+        .idx
+        .stock_id
+        .prefix(stock_id)
+        .range(deps.storage, None, None, Order::Descending)
+        // Extract the stock data from each item.
+        .map(|item| item.and_then(|(_, bid)| Ok(bid)))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(GetBidsResponse { bids })
+}

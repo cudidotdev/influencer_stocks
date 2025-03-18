@@ -1,7 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
-use crate::state::{Bid, Stock};
+use crate::state::{Bid, Share, Stock};
 
 #[cw_serde]
 pub struct InstantiateMsg {}
@@ -70,6 +70,9 @@ pub enum QueryMsg {
     #[returns(GetBidsResponse)]
     GetOpenBidsByStock { stock_id: u64 },
 
+    #[returns(GetBidsResponse)]
+    GetBidsByStock { stock_id: u64 },
+
     #[returns(GetBidByIdResponse)]
     GetBidById { bid_id: u64 },
 
@@ -78,6 +81,15 @@ pub enum QueryMsg {
         stock_id: u64,
         shares_requested: u64,
     },
+
+    #[returns(GetSharesResponse)]
+    GetSharesByStock { stock_id: u64 },
+
+    #[returns(GetSharesResponse)]
+    GetSharesByOwner { owner: Addr },
+
+    #[returns(GetShareByIdResponse)]
+    GetShareById { share_id: u64 },
 }
 
 #[cw_serde]
@@ -104,4 +116,14 @@ pub struct GetBidByIdResponse {
 pub struct GetMinimumBidPriceResponse {
     pub min_price: String,
     pub shares_requested: u64,
+}
+
+#[cw_serde]
+pub struct GetShareByIdResponse {
+    pub share: Share,
+}
+
+#[cw_serde]
+pub struct GetSharesResponse {
+    pub shares: Vec<Share>,
 }

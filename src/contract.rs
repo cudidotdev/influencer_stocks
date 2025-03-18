@@ -123,6 +123,22 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetOpenBidsByStock { stock_id } => {
             to_json_binary(&query::bids::get_open_bids_by_stock(deps, env, stock_id)?)
         }
+
+        QueryMsg::GetBidsByStock { stock_id } => {
+            to_json_binary(&query::bids::get_bids_by_stock_id(deps, env, stock_id)?)
+        }
+
+        QueryMsg::GetShareById { share_id } => {
+            to_json_binary(&query::shares::get_shares_by_id(deps, env, share_id)?)
+        }
+
+        QueryMsg::GetSharesByOwner { owner } => {
+            to_json_binary(&query::shares::get_shares_by_owner(deps, env, owner)?)
+        }
+
+        QueryMsg::GetSharesByStock { stock_id } => {
+            to_json_binary(&query::shares::get_shares_by_stock_id(deps, env, stock_id)?)
+        }
     }
 }
 

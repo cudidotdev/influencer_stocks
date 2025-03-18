@@ -1,7 +1,8 @@
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
 use crate::{
-    state::{Bid, Stock, BIDS, BID_COUNT, STATE, STOCKS, STOCK_COUNT},
+    contract::query,
+    state::{Bid, Share, Stock, BIDS, BID_COUNT, SHARES, SHARE_COUNT, STATE, STOCKS, STOCK_COUNT},
     ContractError,
 };
 
@@ -165,6 +166,38 @@ pub fn end_auction(
     // End the auction
     stock.auction_active = 0;
     STOCKS.save(deps.storage, &stock_id_bytes, &stock)?;
+
+    // Create stakes from winning (open) bids
+    let open_bids = query::bids::get_open_bids_by_stock(deps.as_ref(), env.clone(), stock_id)?.bids;
+
+    for mut bid in open_bids {
+        // Create a stake from bid
+        let share_id = SHARE_COUNT.may_load(deps.storage)?.unwrap_or(0) + 1;
+        SHARE_COUNT.save(deps.storage, &share_id)?;
+
+        let share = Share {
+            id: share_id,
+            stock_id,
+            no_of_shares: bid.remaining_shares,
+            owner: bid.bidder.clone(),
+        };
+
+        SHARES.save(deps.storage, &share_id.to_be_bytes(), &share)?;
+
+        // close bid
+        bid.open = 0;
+
+        BIDS.save(deps.storage, &bid.id.to_be_bytes(), &bid)?;
+    }
+
+    // Make all bids for the stock inactive
+    let all_bids = query::bids::get_bids_by_stock_id(deps.as_ref(), env.clone(), stock_id)?.bids;
+
+    for mut bid in all_bids {
+        bid.active = false;
+
+        BIDS.save(deps.storage, &bid.id.to_be_bytes(), &bid)?;
+    }
 
     Ok(Response::new()
         .add_attribute("action", "end_auction")
