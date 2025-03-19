@@ -1,5 +1,5 @@
-import { SharesTable } from "@/components/shares-table";
+import { MarketOverview } from "@/components/users/market-overview";
 
 export default function Home() {
-  return <SharesTable />;
+  return <MarketOverview />;
 }

@@ -37,10 +37,6 @@ type AnalyticsData = {
     date: string;
     price: number;
   }[];
-  volumeHistory: {
-    date: string;
-    volume: number;
-  }[];
   shareholderDistribution: {
     name: string;
     value: number;
@@ -49,7 +45,8 @@ type AnalyticsData = {
     currentPrice: string;
     priceChange: string;
     priceChangePercentage: string;
-    totalVolume: number;
+    buyVolume: number;
+    sellVolume: number;
     totalShareholders: number;
     marketCap: string;
   };
@@ -101,33 +98,18 @@ export function StockAnalytics() {
           { date: "Jun 3", price: 6.1 },
           { date: "Jun 4", price: 6.3 },
         ],
-        volumeHistory: [
-          { date: "May 22", volume: 120 },
-          { date: "May 23", volume: 150 },
-          { date: "May 24", volume: 100 },
-          { date: "May 25", volume: 180 },
-          { date: "May 26", volume: 200 },
-          { date: "May 27", volume: 160 },
-          { date: "May 28", volume: 220 },
-          { date: "May 29", volume: 250 },
-          { date: "May 30", volume: 190 },
-          { date: "May 31", volume: 210 },
-          { date: "Jun 1", volume: 230 },
-          { date: "Jun 2", volume: 260 },
-          { date: "Jun 3", volume: 240 },
-          { date: "Jun 4", volume: 270 },
-        ],
         shareholderDistribution: [
           { name: "influencer.near", value: 350 },
           { name: "user1.near", value: 200 },
-          { name: "user2.near", value: 150 },
+          { name: "Others", value: 150 },
           { name: "user3.near", value: 300 },
         ],
         keyMetrics: {
           currentPrice: "6.30",
           priceChange: "+0.20",
           priceChangePercentage: "+3.28%",
-          totalVolume: 2580,
+          sellVolume: 2580,
+          buyVolume: 1000,
           totalShareholders: 4,
           marketCap: "6,300.00",
         },
@@ -173,7 +155,7 @@ export function StockAnalytics() {
 
       {analyticsData && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -212,17 +194,37 @@ export function StockAnalytics() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Total Volume
+                  Buy Volume
                 </CardTitle>
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {analyticsData.keyMetrics.totalVolume}
+                  {analyticsData.keyMetrics.buyVolume}
                 </div>
-                <p className="text-xs text-muted-foreground">Shares traded</p>
+                <p className="text-xs text-muted-foreground">
+                  Available Buy Shares
+                </p>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Sell Volume
+                </CardTitle>
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {analyticsData.keyMetrics.sellVolume}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Available Sell Shares
+                </p>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -268,36 +270,6 @@ export function StockAnalytics() {
                         activeDot={{ r: 8 }}
                       />
                     </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Trading Volume</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={analyticsData.volumeHistory}
-                      margin={{
-                        top: 5,
-                        right: 30,
-                        left: 20,
-                        bottom: 5,
-                      }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip
-                        formatter={(value) => [`${value} shares`, "Volume"]}
-                      />
-                      <Legend />
-                      <Bar dataKey="volume" fill="#82ca9d" />
-                    </BarChart>
                   </ResponsiveContainer>
                 </div>
               </CardContent>

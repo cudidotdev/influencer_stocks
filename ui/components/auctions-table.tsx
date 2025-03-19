@@ -15,11 +15,10 @@ type Auction = {
   id: number;
   stock_id: number;
   ticker: string;
-  influencer: string;
   total_shares: number;
   highest_bid: string;
   end_time: string;
-  status: "active" | "ended" | "upcoming";
+  status: "active" | "upcoming";
 };
 
 export function AuctionsTable() {
@@ -33,7 +32,6 @@ export function AuctionsTable() {
         id: 401,
         stock_id: 102,
         ticker: "EMMA",
-        influencer: "emma.near",
         total_shares: 500,
         highest_bid: "10.50",
         end_time: "2023-07-25 14:00",
@@ -43,7 +41,6 @@ export function AuctionsTable() {
         id: 402,
         stock_id: 104,
         ticker: "MIKE",
-        influencer: "mike.near",
         total_shares: 1000,
         highest_bid: "7.25",
         end_time: "2023-07-20 16:00",
@@ -53,11 +50,10 @@ export function AuctionsTable() {
         id: 403,
         stock_id: 105,
         ticker: "SARA",
-        influencer: "sara.near",
         total_shares: 750,
         highest_bid: "8.75",
         end_time: "2023-07-15 12:00",
-        status: "ended",
+        status: "active",
       },
     ];
 
@@ -78,7 +74,6 @@ export function AuctionsTable() {
           <TableRow>
             <TableHead>ID</TableHead>
             <TableHead>Stock</TableHead>
-            <TableHead>Influencer</TableHead>
             <TableHead className="text-right">Total Shares</TableHead>
             <TableHead className="text-right">Highest Bid</TableHead>
             <TableHead>End Time</TableHead>
@@ -98,7 +93,6 @@ export function AuctionsTable() {
               <TableRow key={auction.id}>
                 <TableCell>{auction.id}</TableCell>
                 <TableCell>{auction.ticker}</TableCell>
-                <TableCell>{auction.influencer}</TableCell>
                 <TableCell className="text-right">
                   {auction.total_shares}
                 </TableCell>
@@ -117,11 +111,6 @@ export function AuctionsTable() {
                       Upcoming
                     </span>
                   )}
-                  {auction.status === "ended" && (
-                    <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
-                      Ended
-                    </span>
-                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   {auction.status === "active" && (
@@ -132,11 +121,6 @@ export function AuctionsTable() {
                   {auction.status === "upcoming" && (
                     <Button variant="outline" size="sm" disabled>
                       Coming Soon
-                    </Button>
-                  )}
-                  {auction.status === "ended" && (
-                    <Button variant="outline" size="sm">
-                      View Results
                     </Button>
                   )}
                 </TableCell>
