@@ -1,5 +1,5 @@
 // Define the Chihuahua testnet chain info
-export default {
+const chainInfo = {
   chainId: "woofnet-5",
   chainName: "Chihuahua Testnet",
   rpc: "http://testnet.chihuahua.wtf:26557",
@@ -41,3 +41,5 @@ export default {
     high: 0.04,
   },
 };
+
+export default chainInfo;

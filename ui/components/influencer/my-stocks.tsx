@@ -40,7 +40,7 @@ export function MyStocks() {
     try {
       setLoading(true);
 
-      let stocks = await getStocksByInfluencer(contractClient, influencer);
+      const stocks = await getStocksByInfluencer(contractClient, influencer);
 
       setStocks(stocks);
     } catch (error: any) {

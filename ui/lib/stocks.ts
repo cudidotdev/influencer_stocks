@@ -19,34 +19,34 @@ export async function getStocksByInfluencer(
   contractClient: ContractClient,
   influencer: string,
 ) {
-  let res = await contractClient.getStocksByInfluencer({
+  const res = await contractClient.getStocksByInfluencer({
     influencer,
   });
 
-  let stocks: Stock[] = [];
+  const stocks: Stock[] = [];
 
   for (const stock of res.stocks) {
-    let status: Stock["status"] = !stock.auction_end
+    const status: Stock["status"] = !stock.auction_end
       ? "upcoming"
       : stock.auction_end < moment.utc().valueOf()
         ? "in_auction"
         : "trading";
 
-    let auction_start = stock.auction_start
+    const auction_start = stock.auction_start
       ? moment.utc(stock.auction_start).format("YYYY-MM-DD")
       : undefined;
 
-    let auction_end = stock.auction_end
+    const auction_end = stock.auction_end
       ? moment.utc(stock.auction_end).format("YYYY-MM-DD")
       : undefined;
 
-    let created_at = moment.utc(stock.created_at).format("YYYY-MM-DD");
+    const created_at = moment.utc(stock.created_at).format("YYYY-MM-DD");
 
-    let shares_res = await contractClient.getSharesByStock({
+    const shares_res = await contractClient.getSharesByStock({
       stockId: stock.id,
     });
 
-    let formated_stock: Stock = {
+    const formated_stock: Stock = {
       id: stock.id,
       ticker: stock.ticker,
       total_shares: stock.total_shares,
@@ -58,7 +58,7 @@ export async function getStocksByInfluencer(
     };
 
     if (status != "upcoming") {
-      let bids_res = await contractClient.getBidsByStock({
+      const bids_res = await contractClient.getBidsByStock({
         stockId: stock.id,
       });
 
@@ -66,23 +66,23 @@ export async function getStocksByInfluencer(
     }
 
     if (status == "in_auction") {
-      let bids_res = await contractClient.getMinimumBidPrice({
+      const bids_res = await contractClient.getMinimumBidPrice({
         sharesRequested: 1,
         stockId: stock.id,
       });
 
-      let lowest_bid = bids_res.min_price;
+      const lowest_bid = bids_res.min_price;
 
       formated_stock.lowest_bid = lowest_bid;
     }
 
     if (status == "trading") {
-      let price_res = await contractClient.getBuyPrice({
+      const price_res = await contractClient.getBuyPrice({
         requestedShares: 1,
         stockId: stock.id,
       });
 
-      let lowest_price = price_res.price_per_share;
+      const lowest_price = price_res.price_per_share;
 
       formated_stock.lowest_price = lowest_price;
     }
