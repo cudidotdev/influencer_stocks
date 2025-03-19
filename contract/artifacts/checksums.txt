@@ -1,1 +1,1 @@
-033355889571509872b951ae60d912622327b10d95a932db56fe7b6658ac88e1  influencer_stocks.wasm
+c4a7d1c3d1f8d5f5d7c67af58abdf2d58e05da7b8d2f9d5aca982f2c6cf98c43  influencer_stocks.wasm
