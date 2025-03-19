@@ -69,6 +69,7 @@ fn test_create_and_query_stock_by_id() {
                 total_shares: TOTAL_SHARES,
                 auction_start: None,
                 auction_end: None,
+                marked_as_active_auction: false,
                 created_at: response.clone().stock.created_at
             }
         },

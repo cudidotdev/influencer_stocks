@@ -63,6 +63,7 @@ fn test_get_all_stocks_empty() {
         start_after: None,
         in_auction: None,
         in_sale: None,
+        marked_as_active_auction: None,
     };
 
     let response: GetStocksResponse = app
@@ -114,6 +115,7 @@ fn test_get_all_stocks() {
         start_after: None,
         in_auction: None,
         in_sale: None,
+        marked_as_active_auction: None,
     };
 
     let response: GetStocksResponse = app
@@ -172,6 +174,7 @@ fn test_get_all_stocks_with_start_after() {
         start_after: Some(start_after),
         in_auction: None,
         in_sale: None,
+        marked_as_active_auction: None,
     };
 
     let response: GetStocksResponse = app
@@ -259,6 +262,7 @@ fn test_get_stocks_by_auction_status() {
         start_after: None,
         in_auction: Some(true),
         in_sale: None,
+        marked_as_active_auction: None,
     };
 
     let response: GetStocksResponse = app
@@ -281,6 +285,7 @@ fn test_get_stocks_by_auction_status() {
         start_after: None,
         in_auction: Some(false),
         in_sale: None,
+        marked_as_active_auction: None,
     };
 
     let response: GetStocksResponse = app
@@ -380,6 +385,7 @@ fn test_get_stocks_by_sale_status() {
         start_after: None,
         in_auction: None,
         in_sale: Some(true),
+        marked_as_active_auction: None,
     };
 
     let response: GetStocksResponse = app
@@ -402,6 +408,7 @@ fn test_get_stocks_by_sale_status() {
         start_after: None,
         in_auction: None,
         in_sale: Some(false),
+        marked_as_active_auction: None,
     };
 
     let response: GetStocksResponse = app
@@ -520,6 +527,7 @@ fn test_get_stocks_with_combined_filters() {
         start_after: None,
         in_auction: Some(true),
         in_sale: Some(false),
+        marked_as_active_auction: None,
     };
 
     let response: GetStocksResponse = app
@@ -540,6 +548,7 @@ fn test_get_stocks_with_combined_filters() {
         start_after: None,
         in_auction: Some(false),
         in_sale: Some(true),
+        marked_as_active_auction: None,
     };
 
     let response: GetStocksResponse = app
@@ -560,6 +569,7 @@ fn test_get_stocks_with_combined_filters() {
         start_after: None,
         in_auction: Some(false),
         in_sale: Some(false),
+        marked_as_active_auction: None,
     };
 
     let response: GetStocksResponse = app
@@ -579,6 +589,7 @@ fn test_get_stocks_with_combined_filters() {
         start_after: Some(stock_ids[3]),
         in_auction: Some(true),
         in_sale: Some(false),
+        marked_as_active_auction: None,
     };
 
     let response: GetStocksResponse = app

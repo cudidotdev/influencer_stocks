@@ -98,6 +98,7 @@ fn test_get_stocks_by_influencer() {
         start_after: None,
         in_sale: None,
         in_auction: None,
+        marked_as_active_auction: None,
     };
 
     let response: GetStocksResponse = app

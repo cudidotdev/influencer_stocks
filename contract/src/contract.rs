@@ -84,16 +84,25 @@ pub fn execute(
         }
 
         ExecuteMsg::QuickBuy {
-            stock_id: _stock_id,
-            shares: _shares,
-            slippage: _slippage,
-        } => todo!(),
+            stock_id,
+            shares,
+            slippage,
+        } => execute::orders::quick_buy(deps, env, info, stock_id, shares, slippage),
 
         ExecuteMsg::QuickSell {
-            stock_id: _stock_id,
-            shares: _shares,
-            slippage: _slippage,
-        } => todo!(),
+            stock_id,
+            shares,
+            slippage,
+            price_per_share,
+        } => execute::orders::quick_sell(
+            deps,
+            env,
+            info,
+            stock_id,
+            shares,
+            price_per_share,
+            slippage,
+        ),
     }
 }
 
@@ -108,12 +117,14 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             start_after,
             in_auction,
             in_sale,
+            marked_as_active_auction,
         } => to_json_binary(&query::stocks::get_all_stocks(
             deps,
             env,
             start_after,
             in_auction,
             in_sale,
+            marked_as_active_auction,
         )?),
 
         QueryMsg::GetStocksByInfluencer {

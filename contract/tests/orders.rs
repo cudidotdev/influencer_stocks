@@ -270,7 +270,8 @@ fn test_create_multiple_sell_multiple_buy_orders() {
 
     let sales = res.sales;
 
-    assert_eq!(sales.len(), 2);
+    // 2 after bidding and 2 in the order
+    assert_eq!(sales.len(), 4);
 
     assert_eq!(sales[0].from, bidder2.clone());
     assert_eq!(sales[0].to, user.clone());
@@ -281,6 +282,16 @@ fn test_create_multiple_sell_multiple_buy_orders() {
     assert_eq!(sales[1].to, user.clone());
     assert_eq!(sales[1].no_of_shares, 1000);
     assert_eq!(sales[1].price_per_share, 20);
+
+    assert_eq!(sales[2].from, influencer.clone());
+    assert_eq!(sales[2].to, bidder2.clone());
+    assert_eq!(sales[2].no_of_shares, 950_000);
+    assert_eq!(sales[2].price_per_share, 11);
+
+    assert_eq!(sales[3].from, influencer.clone());
+    assert_eq!(sales[3].to, bidder1.clone());
+    assert_eq!(sales[3].no_of_shares, 50_000);
+    assert_eq!(sales[3].price_per_share, 10);
 
     // confirm the users shares increased and bidder2 shares decreased
 

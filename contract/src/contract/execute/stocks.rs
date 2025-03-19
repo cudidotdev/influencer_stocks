@@ -2,7 +2,10 @@ use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
 
 use crate::{
     contract::query,
-    state::{Bid, Share, Stock, BIDS, BID_COUNT, SHARES, SHARE_COUNT, STATE, STOCKS, STOCK_COUNT},
+    state::{
+        Bid, Sale, Share, Stock, BIDS, BID_COUNT, SALES, SALE_COUNT, SHARES, SHARE_COUNT, STATE,
+        STOCKS, STOCK_COUNT,
+    },
     ContractError,
 };
 
@@ -35,6 +38,7 @@ pub fn create_stock(
         total_shares: TOTAL_SHARES,
         auction_start: None,
         auction_end: None,
+        marked_as_active_auction: false,
         created_at,
     };
 
@@ -91,6 +95,9 @@ pub fn start_auction(
     // Set auction start time to current blockchain time
     let start_timestamp = current_time;
     stock.auction_start = Some(current_time);
+
+    // Mark as active auction
+    stock.marked_as_active_auction = true;
 
     // Calculate auction end time (24 hours later)
     let end_timestamp = start_timestamp + (24 * 60 * 60 * 1000); // 24 hours in milliseconds
@@ -152,8 +159,9 @@ pub fn end_auction(
     let current_time = env.block.time.nanos() / 1_000_000; // Convert nanos to millis
 
     // Check if auction is ended and stock is in sale
+    // and marked as inactive
     if let Some(end_timestamp) = stock.auction_end {
-        if current_time > end_timestamp {
+        if current_time > end_timestamp && !stock.marked_as_active_auction {
             return Err(ContractError::GenericError(f!(
                 "Stock has already been auctioned and in sale"
             )));
@@ -168,7 +176,15 @@ pub fn end_auction(
     }
 
     // Update auction end time to current block time
-    stock.auction_end = Some(current_time);
+    // if less than current time
+    if let Some(end_timestamp) = stock.auction_end {
+        if current_time < end_timestamp {
+            stock.auction_end = Some(current_time);
+        }
+    }
+
+    // mark as inactive auction
+    stock.marked_as_active_auction = false;
 
     // End the auction
     STOCKS.save(deps.storage, &stock_id_bytes, &stock)?;
@@ -194,6 +210,22 @@ pub fn end_auction(
         bid.open = 0;
 
         BIDS.save(deps.storage, &bid.id.to_be_bytes(), &bid)?;
+
+        // Create Sale record
+        let sale_id = SALE_COUNT.may_load(deps.storage)?.unwrap_or(0) + 1;
+        SALE_COUNT.save(deps.storage, &sale_id)?;
+
+        let sale = Sale {
+            id: sale_id,
+            stock_id,
+            no_of_shares: bid.remaining_shares,
+            price_per_share: bid.price_per_share,
+            from: stock.influencer.clone(),
+            to: bid.bidder.clone(),
+            created_at: current_time,
+        };
+
+        SALES.save(deps.storage, &sale_id.to_be_bytes(), &sale)?;
     }
 
     // Make all bids for the stock inactive

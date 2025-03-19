@@ -19,6 +19,7 @@ pub struct Stock {
     pub total_shares: u64,
     pub auction_start: Option<u64>,
     pub auction_end: Option<u64>,
+    pub marked_as_active_auction: bool,
     pub created_at: u64,
 }
 

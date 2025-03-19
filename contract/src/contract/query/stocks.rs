@@ -22,6 +22,7 @@ pub fn get_all_stocks(
     start_after: Option<u64>,
     in_auction: Option<bool>,
     in_sale: Option<bool>,
+    marked_as_active_auction: Option<bool>,
 ) -> StdResult<GetStocksResponse> {
     // Set starting point for the query
     // (where the next stock_id should start from, excluding the `start_after` id)
@@ -79,6 +80,15 @@ pub fn get_all_stocks(
                 })
                 .collect();
         }
+    }
+
+    // Filter by marked_as_active_auction
+    if let Some(active) = marked_as_active_auction {
+        stocks = stocks
+            .into_iter()
+            // If auction has ended
+            .filter(|stock| stock.marked_as_active_auction == active)
+            .collect();
     }
 
     Ok(GetStocksResponse { stocks })

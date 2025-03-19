@@ -49,6 +49,7 @@ pub enum ExecuteMsg {
     QuickSell {
         stock_id: u64,
         shares: u64,
+        price_per_share: u128,
         // 1 = 1% slippage
         slippage: u64,
     },
@@ -73,6 +74,7 @@ pub enum QueryMsg {
         start_after: Option<u64>,
         in_auction: Option<bool>,
         in_sale: Option<bool>,
+        marked_as_active_auction: Option<bool>,
     },
 
     #[returns(GetStocksResponse)]
