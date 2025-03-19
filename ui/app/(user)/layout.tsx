@@ -24,11 +24,11 @@ export default function Layout({
   const activeTab = pathname.split("/")[1] || "shares";
 
   return (
-    <div className="w-full mx-auto sm:max-w-[40rem] md:max-w-[48rem] lg:max-w-[64rem] xl:max-w-[80rem] px-4 py-2">
+    <div className="w-full mx-auto max-w-[80rem] px-4 sm:px-8 py-2">
       <div className="flex justify-end mb-4">
         <p className="text-sm text-muted-foreground">
           Are you an influencer?{" "}
-          <a href="#" className="text-primary hover:underline">
+          <a href="/influencer" className="text-primary hover:underline">
             Create your stock!
           </a>
         </p>
@@ -36,7 +36,7 @@ export default function Layout({
 
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Your Dashboard</CardTitle>
+          <CardTitle className="!text-xl">Your Dashboard</CardTitle>
           <CardDescription>
             Manage your shares, stocks, bids, orders, and auctions
           </CardDescription>
