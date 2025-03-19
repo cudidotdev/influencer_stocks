@@ -20,7 +20,7 @@ export function Navbar() {
           <div className="flex items-center">
             <Link
               href="/"
-              className="text-2xl font-bold bg-gradient-to-r from-blue-900 via-purple-800 to-pink-600 text-transparent bg-clip-text"
+              className="text-2xl font-bold bg-gradient-to-r from-blue-900 via-purple-900 to-pink-700 text-transparent bg-clip-text"
             >
               HypeX
             </Link>
