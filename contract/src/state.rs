@@ -53,7 +53,7 @@ pub struct Bid {
     pub id: u64,
     pub stock_id: u64,
     pub bidder: Addr,
-    pub price_per_share: u128, // Price in smallest unit (e.g., uhuahua)
+    pub price_per_share: u128, // Price in smallest unit (e.g., uosmo)
     pub shares_requested: u64,
     pub remaining_shares: u64, // Number of shares that haven't been outbid
     pub created_at: u64,

@@ -80,7 +80,7 @@ pub fn get_open_bids_by_stock(deps: Deps, _env: Env, stock_id: u64) -> StdResult
     Ok(GetBidsResponse { bids })
 }
 
-// Minimum bid increment (0.000001 huahua)
+// Minimum bid increment (0.000001 uosmo)
 const MIN_BID_INCREMENT: u128 = 1;
 
 // Function to get the minimum bid price for a given number of shares

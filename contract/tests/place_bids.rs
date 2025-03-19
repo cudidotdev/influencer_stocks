@@ -68,7 +68,7 @@ fn test_place_bid_success() {
     let shares: u64 = 100_000;
     let total_amount = price_per_share * shares as u128;
 
-    // Verify that min price is 1 uhuahua (0.000001 huahua)
+    // Verify that min price is 1 uosmo (0.000001 osmo)
     let query_bid_msg = QueryMsg::GetMinimumBidPrice {
         stock_id,
         shares_requested: shares,
@@ -215,7 +215,7 @@ fn test_place_bid_success() {
     let shares: u64 = 950_000;
     let total_amount = price_per_share * shares as u128;
 
-    // Verify that min price is 11 uhuahua (0.000011 huahua)
+    // Verify that min price is 11 uosmo (0.000011 osmo)
     let query_bid_msg = QueryMsg::GetMinimumBidPrice {
         stock_id,
         shares_requested: shares,
@@ -469,7 +469,7 @@ fn test_excess_fund_refund() {
     )
     .unwrap();
 
-    // Send 1500 uhuahua for 100 shares @10 (needs 1000)
+    // Send 1500 uosmo for 100 shares @10 (needs 1000)
     app.send_tokens(vault.clone(), bidder.clone(), &coins(1500, DENOM))
         .unwrap();
 

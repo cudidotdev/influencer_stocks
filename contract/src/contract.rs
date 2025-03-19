@@ -11,7 +11,7 @@ pub mod execute;
 pub mod query;
 
 // Denomination of the token we're using
-pub const DENOM: &str = "uhuahua";
+pub const DENOM: &str = "uosmo";
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:influencer-stocks";
