@@ -15,17 +15,17 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useContract } from "@/providers/contract";
 
 const formSchema = z.object({
   ticker: z
     .string()
     .min(2, { message: "Ticker must be at least 2 characters." })
-    .max(5, { message: "Ticker must not exceed 5 characters." })
+    .max(10, { message: "Ticker must not exceed 10 characters." })
     .toUpperCase(),
   description: z.string().optional(),
   initialSupply: z
@@ -39,13 +39,13 @@ const formSchema = z.object({
 export function CreateStock() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const { signingClient, contractClient, msgComposer } = useContract();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       ticker: "",
-      description: "",
-      initialSupply: 1000,
+      initialSupply: 1_000_000,
     },
   });
 
@@ -54,14 +54,19 @@ export function CreateStock() {
 
     // Simulate API call to create stock
     try {
-      // This would be replaced with actual contract interaction
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      if (!msgComposer || !signingClient || !contractClient)
+        return toast.error("Please connect wallet");
 
-      console.log(values);
+      const msg = msgComposer.createStock({ ticker: values.ticker });
+
+      await signingClient!.signAndBroadcast(
+        contractClient.sender,
+        [msg],
+        "auto", // or specify gas
+      );
+
       setIsSuccess(true);
-      toast.success("Stock Created Successfully", {
-        description: `Your stock ${values.ticker} has been created with ${values.initialSupply} shares.`,
-      });
+      toast.success("Stock Created Successfully");
 
       // Reset form after success
       form.reset();
@@ -70,14 +75,19 @@ export function CreateStock() {
       setTimeout(() => {
         setIsSuccess(false);
       }, 3000);
-    } catch (error) {
-      toast.error("Error Creating Stock", {
-        description:
-          "There was an error creating your stock. Please try again.",
-      });
+    } catch (error: any) {
+      toast.error("Error Creating Stock: " + error?.message);
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (!contractClient?.sender) {
+    return (
+      <div className="flex justify-center p-4">
+        Please conect wallet to continue
+      </div>
+    );
   }
 
   return (
@@ -127,27 +137,6 @@ export function CreateStock() {
 
               <FormField
                 control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Describe your stock offering..."
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Provide details about your stock offering to help
-                      investors understand its value.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
                 name="initialSupply"
                 render={({ field }) => (
                   <FormItem>
@@ -157,6 +146,7 @@ export function CreateStock() {
                         type="number"
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value))}
+                        disabled
                       />
                     </FormControl>
                     <FormDescription>

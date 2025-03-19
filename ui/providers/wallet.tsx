@@ -1,13 +1,21 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import chainInfo from "@/lib/chain-info";
+import { OfflineSigner } from "@cosmjs/proto-signing";
+import { toast } from "sonner";
 
 interface WalletContextType {
   connected: boolean;
   connecting: boolean;
   address: string | null;
-  offlineSigner: string | null;
+  offlineSigner: OfflineSigner | null;
   connect: () => Promise<void>;
   disconnect: () => void;
 }
@@ -18,7 +26,7 @@ const WalletContext = createContext<WalletContextType>({
   address: null,
   offlineSigner: null,
   connect: async () => {},
-  disconnect: () => {},
+  disconnect: async () => {},
 });
 
 export const useWallet = () => useContext(WalletContext);
@@ -31,20 +39,38 @@ export function WalletProvider({ children }: WalletProviderProps) {
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
-  const [offlineSigner, setOfflineSigner] = useState<string | null>(null);
+  const [offlineSigner, setOfflineSigner] = useState<OfflineSigner | null>(
+    null,
+  );
 
   // Mock wallet connection
   const connect = async () => {
-    setConnecting(true);
-
     // Check if Keplr is installed
     if (!window.keplr) {
-      alert("Please install Keplr extension");
-      setConnecting(false);
+      toast.error("Please install Keplr extension");
+
+      window.open("https://www.keplr.app/get", "_blank");
+
       return;
     }
 
+    await setOfflineSignerAndAddress();
+  };
+
+  const disconnect = async () => {
+    setAddress(null);
+    setConnected(false);
+
+    // Revoke permissions
+    await window.keplr.disable(chainInfo.chainId);
+  };
+
+  async function setOfflineSignerAndAddress() {
+    if (!window.keplr) return;
+
     try {
+      setConnecting(true);
+
       // Add the Chihuahua testnet to Keplr
       await window.keplr.experimentalSuggestChain(chainInfo);
 
@@ -52,27 +78,36 @@ export function WalletProvider({ children }: WalletProviderProps) {
       await window.keplr.enable(chainInfo.chainId);
 
       // Get the offlineSigner from Keplr
-      const offlineSigner = window.keplr.getOfflineSigner(chainInfo.chainId);
+      const offlineSigner: OfflineSigner = window.keplr.getOfflineSigner(
+        chainInfo.chainId,
+      );
 
       // Get user account
       const accounts = await offlineSigner.getAccounts();
 
       setAddress(accounts[0].address);
       setOfflineSigner(offlineSigner);
+
+      setConnected(true);
     } catch (error: any) {
-      console.error("Error connecting to Keplr:", error);
-      alert("Failed to connect to Keplr: " + error?.message);
-      return;
+      toast.error("Error connecting to Keplr: " + error?.message);
+    } finally {
+      setConnecting(false);
     }
+  }
 
-    setConnected(true);
-    setConnecting(false);
-  };
+  useEffect(() => {
+    setOfflineSignerAndAddress();
 
-  const disconnect = () => {
-    setAddress(null);
-    setConnected(false);
-  };
+    window.addEventListener("keplr_keystorechange", setOfflineSignerAndAddress);
+
+    () => {
+      window.removeEventListener(
+        "keplr_keystorechange",
+        setOfflineSignerAndAddress,
+      );
+    };
+  }, []);
 
   return (
     <WalletContext.Provider

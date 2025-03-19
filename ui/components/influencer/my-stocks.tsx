@@ -21,59 +21,43 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, TrendingUp, Clock, Gavel } from "lucide-react";
 import Link from "next/link";
-
-type Stock = {
-  id: number;
-  ticker: string;
-  total_shares: number;
-  status: "upcoming" | "in_auction" | "trading";
-  auction_start?: string;
-  auction_end?: string;
-  created_at: string;
-  highest_bid?: string;
-  total_shareholders?: number;
-};
+import { useContract } from "@/providers/contract";
+import { useWallet } from "@/providers/wallet";
+import { ContractClient } from "@/lib/contract/Contract.client";
+import { getStocksByInfluencer, Stock } from "@/lib/stocks";
+import { toast } from "sonner";
 
 export function MyStocks() {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [loading, setLoading] = useState(true);
+  const { connect } = useWallet();
+  const { contractClient } = useContract();
+
+  async function loadStocks(
+    contractClient: ContractClient,
+    influencer: string,
+  ) {
+    try {
+      setLoading(true);
+
+      let stocks = await getStocksByInfluencer(contractClient, influencer);
+
+      setStocks(stocks);
+    } catch (error: any) {
+      toast.error("Error fetching stocks: " + error?.message);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    // Mock data - would be replaced with actual contract query
-    const mockStocks: Stock[] = [
-      {
-        id: 101,
-        ticker: "ALEX",
-        total_shares: 1000,
-        status: "trading",
-        created_at: "2023-05-15",
-        highest_bid: "5.20",
-        total_shareholders: 12,
-      },
-      {
-        id: 102,
-        ticker: "EMMA",
-        total_shares: 500,
-        status: "in_auction",
-        auction_start: "2023-06-20",
-        auction_end: "2023-06-27",
-        created_at: "2023-06-15",
-        highest_bid: "10.50",
-      },
-      {
-        id: 103,
-        ticker: "JOHN",
-        total_shares: 2000,
-        status: "upcoming",
-        created_at: "2023-07-01",
-      },
-    ];
+    if (!contractClient) {
+      connect();
+      return;
+    }
 
-    setTimeout(() => {
-      setStocks(mockStocks);
-      setLoading(false);
-    }, 500);
-  }, []);
+    loadStocks(contractClient, contractClient.sender);
+  }, [contractClient?.sender]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -113,6 +97,14 @@ export function MyStocks() {
     }
   };
 
+  if (!contractClient?.sender) {
+    return (
+      <div className="flex justify-center p-4">
+        Please conect wallet to continue
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center p-4">Loading your stocks...</div>
@@ -137,7 +129,7 @@ export function MyStocks() {
             <TableHead className="text-right">Total Shares</TableHead>
             <TableHead>Created</TableHead>
             <TableHead>Auction Period</TableHead>
-            <TableHead className="text-right">Highest Bid</TableHead>
+            <TableHead className="text-right">Lowest Buy/Bid Price</TableHead>
             <TableHead className="text-right">Shareholders</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -169,7 +161,7 @@ export function MyStocks() {
                     : "N/A"}
                 </TableCell>
                 <TableCell className="text-right">
-                  {stock.highest_bid || "N/A"}
+                  {stock.lowest_price || stock.lowest_bid || "N/A"}
                 </TableCell>
                 <TableCell className="text-right">
                   {stock.total_shareholders || "0"}
@@ -182,11 +174,18 @@ export function MyStocks() {
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent
+                      align="end"
+                      className="[&_button]:cursor-pointer"
+                    >
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       {stock.status === "upcoming" && (
-                        <DropdownMenuItem>Start Auction</DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <button onClick={() => alert("click")}>
+                            Start Auction
+                          </button>
+                        </DropdownMenuItem>
                       )}
                       {stock.status === "in_auction" && (
                         <DropdownMenuItem>End Auction</DropdownMenuItem>

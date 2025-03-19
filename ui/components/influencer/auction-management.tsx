@@ -20,74 +20,53 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle, Gavel, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
-type Stock = {
-  id: number;
-  ticker: string;
-  total_shares: number;
-  status: "upcoming" | "in_auction" | "trading";
-  auction_start?: string;
-  auction_end?: string;
-  created_at: string;
-  highest_bid?: string;
-  total_bids?: number;
-};
+import { getStocksByInfluencer, Stock } from "@/lib/stocks";
+import { useWallet } from "@/providers/wallet";
+import { useContract } from "@/providers/contract";
+import { ContractClient } from "@/lib/contract/Contract.client";
+import Link from "next/link";
 
 export function AuctionManagement() {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [loading, setLoading] = useState(true);
-  const [auctionDuration, setAuctionDuration] = useState(7);
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
   const [isStartingAuction, setIsStartingAuction] = useState(false);
   const [isEndingAuction, setIsEndingAuction] = useState(false);
   const [activeTab, setActiveTab] = useState("eligible");
 
-  useEffect(() => {
-    // Mock data - would be replaced with actual contract query
-    const mockStocks: Stock[] = [
-      {
-        id: 101,
-        ticker: "ALEX",
-        total_shares: 1000,
-        status: "upcoming",
-        created_at: "2023-05-15",
-      },
-      {
-        id: 102,
-        ticker: "EMMA",
-        total_shares: 500,
-        status: "in_auction",
-        auction_start: "2023-06-20",
-        auction_end: "2023-06-27",
-        created_at: "2023-06-15",
-        highest_bid: "10.50",
-        total_bids: 15,
-      },
-      {
-        id: 103,
-        ticker: "JOHN",
-        total_shares: 2000,
-        status: "trading",
-        auction_start: "2023-04-10",
-        auction_end: "2023-04-17",
-        created_at: "2023-04-01",
-        highest_bid: "3.75",
-        total_bids: 32,
-      },
-    ];
+  const { connect } = useWallet();
+  const { contractClient } = useContract();
 
-    setTimeout(() => {
-      setStocks(mockStocks);
+  async function loadStocks(
+    contractClient: ContractClient,
+    influencer: string,
+  ) {
+    try {
+      setLoading(true);
+
+      let stocks = await getStocksByInfluencer(contractClient, influencer);
+
+      setStocks(stocks);
+    } catch (error: any) {
+      toast.error("Error fetching stocks: " + error?.message);
+    } finally {
       setLoading(false);
-    }, 500);
-  }, []);
+    }
+  }
+
+  useEffect(() => {
+    if (!contractClient) {
+      connect();
+      return;
+    }
+
+    loadStocks(contractClient, contractClient.sender);
+  }, [contractClient?.sender]);
 
   const eligibleForAuction = stocks.filter(
     (stock) => stock.status === "upcoming",
@@ -106,6 +85,8 @@ export function AuctionManagement() {
       // This would be replaced with actual contract interaction
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
+      // Use actual start auction time
+
       // Update the stock status in the UI
       setStocks(
         stocks.map((stock) =>
@@ -114,9 +95,7 @@ export function AuctionManagement() {
                 ...stock,
                 status: "in_auction",
                 auction_start: new Date().toISOString().split("T")[0],
-                auction_end: new Date(
-                  Date.now() + auctionDuration * 24 * 60 * 60 * 1000,
-                )
+                auction_end: new Date(Date.now() + 24 * 60 * 60 * 1000)
                   .toISOString()
                   .split("T")[0],
               }
@@ -172,9 +151,17 @@ export function AuctionManagement() {
     }
   };
 
+  if (!contractClient?.sender) {
+    return (
+      <div className="flex justify-center p-4">
+        Please conect wallet to continue
+      </div>
+    );
+  }
+
   if (loading) {
     return (
-      <div className="flex justify-center p-4">Loading auction data...</div>
+      <div className="flex justify-center p-4">Loading your stocks...</div>
     );
   }
 
@@ -233,6 +220,7 @@ export function AuctionManagement() {
                               <Button
                                 onClick={() => setSelectedStock(stock)}
                                 variant="outline"
+                                className="cursor-pointer"
                               >
                                 Start Auction
                               </Button>
@@ -242,46 +230,21 @@ export function AuctionManagement() {
                                 <DialogTitle>
                                   Start Auction for {selectedStock?.ticker}
                                 </DialogTitle>
-                                <DialogDescription>
-                                  Set the duration for the auction. Once
-                                  started, users will be able to place bids on
-                                  your stock.
-                                </DialogDescription>
                               </DialogHeader>
-                              <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                  <Label
-                                    htmlFor="duration"
-                                    className="text-right"
-                                  >
-                                    Duration (days)
-                                  </Label>
-                                  <Input
-                                    id="duration"
-                                    type="number"
-                                    value={auctionDuration}
-                                    onChange={(e) =>
-                                      setAuctionDuration(Number(e.target.value))
-                                    }
-                                    min={1}
-                                    max={30}
-                                    className="col-span-3"
-                                  />
-                                </div>
-                              </div>
                               <Alert className="bg-blue-50 text-blue-800 border-blue-200">
                                 <AlertCircle className="h-4 w-4" />
                                 <AlertTitle>Important</AlertTitle>
                                 <AlertDescription>
-                                  Once the auction starts, it will run for{" "}
-                                  {auctionDuration} days. After that,
-                                  you&apos;ll need to manually end the auction.
+                                  Once the auction starts, it will run for 24
+                                  hours. After that, you&apos;ll need to
+                                  manually end the auction.
                                 </AlertDescription>
                               </Alert>
                               <DialogFooter>
                                 <Button
                                   onClick={handleStartAuction}
                                   disabled={isStartingAuction}
+                                  className="cursor-pointer"
                                 >
                                   {isStartingAuction
                                     ? "Starting..."
@@ -317,7 +280,7 @@ export function AuctionManagement() {
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Total Shares</TableHead>
                       <TableHead>Auction Period</TableHead>
-                      <TableHead className="text-right">Highest Bid</TableHead>
+                      <TableHead className="text-right">Lowest Bid</TableHead>
                       <TableHead className="text-right">Total Bids</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -348,7 +311,7 @@ export function AuctionManagement() {
                             : "N/A"}
                         </TableCell>
                         <TableCell className="text-right">
-                          {stock.highest_bid || "No bids yet"}
+                          {stock.lowest_bid || "No bids yet"}
                         </TableCell>
                         <TableCell className="text-right">
                           {stock.total_bids || 0}
@@ -357,15 +320,21 @@ export function AuctionManagement() {
                           <div className="flex justify-end gap-2">
                             <Button
                               variant="outline"
-                              onClick={() => setActiveTab("bids")}
+                              asChild
+                              className="cursor-pointer"
                             >
-                              View Bids
+                              <Link
+                                href={`/influencer/bids?stock_id=${stock.id}`}
+                              >
+                                View Bids
+                              </Link>
                             </Button>
                             <Dialog>
                               <DialogTrigger asChild>
                                 <Button
                                   onClick={() => setSelectedStock(stock)}
                                   variant="default"
+                                  className="cursor-pointer"
                                 >
                                   End Auction
                                 </Button>
@@ -430,9 +399,6 @@ export function AuctionManagement() {
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Total Shares</TableHead>
                       <TableHead>Auction Period</TableHead>
-                      <TableHead className="text-right">
-                        Final Highest Bid
-                      </TableHead>
                       <TableHead className="text-right">Total Bids</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -461,9 +427,6 @@ export function AuctionManagement() {
                           {stock.auction_start && stock.auction_end
                             ? `${stock.auction_start} - ${stock.auction_end}`
                             : "N/A"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {stock.highest_bid || "No bids"}
                         </TableCell>
                         <TableCell className="text-right">
                           {stock.total_bids || 0}

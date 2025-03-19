@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { WalletProvider } from "@/providers/wallet";
+import { ContractProvider } from "@/providers/contract";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,13 +32,15 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans`}
       >
         <WalletProvider>
-          <main className="min-h-screen flex flex-col">
-            <Navbar />
+          <ContractProvider>
+            <main className="min-h-screen flex flex-col">
+              <Navbar />
 
-            {children}
-          </main>
+              {children}
+            </main>
 
-          <Toaster />
+            <Toaster theme="light" richColors position="top-left" />
+          </ContractProvider>
         </WalletProvider>
       </body>
     </html>
