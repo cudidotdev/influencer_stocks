@@ -101,7 +101,7 @@ pub struct Share {
     pub owner: Addr,
 }
 
-// Index for Stakes
+// Index for Shares
 pub struct ShareIndexes<'a> {
     pub stock_id: MultiIndex<'a, u64, Share, &'a [u8]>,
     pub owner: MultiIndex<'a, Addr, Share, &'a [u8]>,
@@ -125,3 +125,134 @@ pub const SHARE_INDEXES: ShareIndexes = ShareIndexes {
 
 pub const SHARES: IndexedMap<&[u8], Share, ShareIndexes> = IndexedMap::new("share", SHARE_INDEXES);
 pub const SHARE_COUNT: Item<u64> = Item::new("share_count");
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+pub struct SellOrder {
+    pub id: u64,
+    pub stock_id: u64,
+    pub available_shares: u64,
+    pub price_per_share: u128,
+    pub sold_shares: u64,
+    pub owner: Addr,
+    pub created_at: u64,
+    pub resolved_at: Option<u64>,
+}
+
+// Index for Sell Orders
+pub struct SellOrderIndexes<'a> {
+    pub stock_id: MultiIndex<'a, u64, SellOrder, &'a [u8]>,
+    pub owner: MultiIndex<'a, Addr, SellOrder, &'a [u8]>,
+}
+
+impl IndexList<SellOrder> for SellOrderIndexes<'_> {
+    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<SellOrder>> + '_> {
+        let v = vec![
+            &self.stock_id as &dyn Index<SellOrder>,
+            &self.owner as &dyn Index<SellOrder>,
+        ];
+        Box::new(v.into_iter())
+    }
+}
+
+// Create indexes
+pub const SELL_ORDER_INDEXES: SellOrderIndexes = SellOrderIndexes {
+    stock_id: MultiIndex::new(
+        |_pk, sell_order| sell_order.stock_id,
+        "sell_order",
+        "sell_order__stock_id",
+    ),
+    owner: MultiIndex::new(
+        |_pk, sell_order| sell_order.owner.clone(),
+        "sell_order",
+        "sell_order__owner",
+    ),
+};
+
+pub const SELL_ORDERS: IndexedMap<&[u8], SellOrder, SellOrderIndexes> =
+    IndexedMap::new("sell_order", SELL_ORDER_INDEXES);
+pub const SELL_ORDER_COUNT: Item<u64> = Item::new("sell_order_count");
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+pub struct BuyOrder {
+    pub id: u64,
+    pub stock_id: u64,
+    pub requested_shares: u64,
+    pub price_per_share: u128,
+    pub bought_shares: u64,
+    pub owner: Addr,
+    pub created_at: u64,
+    pub resolved_at: Option<u64>,
+}
+
+// Index for Sell Orders
+pub struct BuyOrderIndexes<'a> {
+    pub stock_id: MultiIndex<'a, u64, BuyOrder, &'a [u8]>,
+    pub owner: MultiIndex<'a, Addr, BuyOrder, &'a [u8]>,
+}
+
+impl IndexList<BuyOrder> for BuyOrderIndexes<'_> {
+    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<BuyOrder>> + '_> {
+        let v = vec![
+            &self.stock_id as &dyn Index<BuyOrder>,
+            &self.owner as &dyn Index<BuyOrder>,
+        ];
+        Box::new(v.into_iter())
+    }
+}
+
+// Create indexes
+pub const BUY_ORDER_INDEXES: BuyOrderIndexes = BuyOrderIndexes {
+    stock_id: MultiIndex::new(
+        |_pk, buy_order| buy_order.stock_id,
+        "buy_order",
+        "buy_order__stock_id",
+    ),
+    owner: MultiIndex::new(
+        |_pk, buy_order| buy_order.owner.clone(),
+        "buy_order",
+        "buy_order__owner",
+    ),
+};
+
+pub const BUY_ORDERS: IndexedMap<&[u8], BuyOrder, BuyOrderIndexes> =
+    IndexedMap::new("buy_order", BUY_ORDER_INDEXES);
+pub const BUY_ORDER_COUNT: Item<u64> = Item::new("buy_order_count");
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+pub struct Sale {
+    pub id: u64,
+    pub stock_id: u64,
+    pub no_of_shares: u64,
+    pub price_per_share: u128,
+    pub from: Addr,
+    pub to: Addr,
+    pub created_at: u64,
+}
+
+// Index for Sales
+pub struct SaleIndexes<'a> {
+    pub stock_id: MultiIndex<'a, u64, Sale, &'a [u8]>,
+    pub from: MultiIndex<'a, Addr, Sale, &'a [u8]>,
+    pub to: MultiIndex<'a, Addr, Sale, &'a [u8]>,
+}
+
+impl IndexList<Sale> for SaleIndexes<'_> {
+    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Sale>> + '_> {
+        let v = vec![
+            &self.stock_id as &dyn Index<Sale>,
+            &self.from as &dyn Index<Sale>,
+            &self.to as &dyn Index<Sale>,
+        ];
+        Box::new(v.into_iter())
+    }
+}
+
+// Create indexes
+pub const SALE_INDEXES: SaleIndexes = SaleIndexes {
+    stock_id: MultiIndex::new(|_pk, sale| sale.stock_id, "sale", "sale__stock_id"),
+    from: MultiIndex::new(|_pk, sale| sale.from.clone(), "sale", "sale__from"),
+    to: MultiIndex::new(|_pk, sale| sale.to.clone(), "sale", "sale__to"),
+};
+
+pub const SALES: IndexedMap<&[u8], Sale, SaleIndexes> = IndexedMap::new("sale", SALE_INDEXES);
+pub const SALE_COUNT: Item<u64> = Item::new("sale_count");

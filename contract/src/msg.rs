@@ -1,7 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
-use crate::state::{Bid, Share, Stock};
+use crate::state::{Bid, BuyOrder, Sale, SellOrder, Share, Stock};
 
 #[cw_serde]
 pub struct InstantiateMsg {}
@@ -24,6 +24,40 @@ pub enum ExecuteMsg {
         stock_id: u64,
         price_per_share: u128,
         shares: u64,
+    },
+
+    CreateBuyOrder {
+        stock_id: u64,
+        price_per_share: u128,
+        shares: u64,
+    },
+
+    CreateSellOrder {
+        stock_id: u64,
+        price_per_share: u128,
+        shares: u64,
+    },
+
+    CancelBuyOrder {
+        buy_order_id: u64,
+    },
+
+    CancelSellOrder {
+        sell_order_id: u64,
+    },
+
+    QuickSell {
+        stock_id: u64,
+        shares: u64,
+        // 1 = 1% slippage
+        slippage: u64,
+    },
+
+    QuickBuy {
+        stock_id: u64,
+        shares: u64,
+        // 1 = 1% slippage
+        slippage: u64,
     },
 }
 
@@ -78,6 +112,59 @@ pub enum QueryMsg {
 
     #[returns(GetShareByIdResponse)]
     GetShareById { share_id: u64 },
+
+    #[returns(GetSellPriceResponse)]
+    GetSellPrice {
+        stock_id: u64,
+        requested_shares: u64,
+    },
+
+    #[returns(GetBuyPriceResponse)]
+    GetBuyPrice {
+        stock_id: u64,
+        requested_shares: u64,
+    },
+
+    #[returns(GetBuyOrdersResponse)]
+    GetOpenBuyOrdersByStock { stock_id: u64, sort_by: OrderSort },
+
+    #[returns(GetSellPriceResponse)]
+    GetOpenBuyOrdersByOwner { owner: Addr, sort_by: OrderSort },
+
+    #[returns(GetBuyOrderByIdResponse)]
+    GetBuyOrderById { buy_order_id: u64 },
+
+    #[returns(GetSellPriceResponse)]
+    GetOpenSellOrdersByStock { stock_id: u64, sort_by: OrderSort },
+
+    #[returns(GetSellPriceResponse)]
+    GetOpenSellOrdersByOwner { owner: Addr, sort_by: OrderSort },
+
+    #[returns(GetSellOrderByIdResponse)]
+    GetSellOrderById { sell_order_id: u64 },
+
+    #[returns(GetTotalSellVolumeResponse)]
+    GetTotalSellVolume { stock_id: u64 },
+
+    #[returns(GetTotalBuyVolumeResponse)]
+    GetTotalBuyVolume { stock_id: u64 },
+
+    #[returns(GetSalesResponse)]
+    GetSalesByStock { stock_id: u64 },
+
+    #[returns(GetSaleByIdResponse)]
+    GetSalesById { sale_id: u64 },
+
+    #[returns(GetSalesByUserResponse)]
+    GetSalesByUser { user: Addr },
+}
+
+#[cw_serde]
+pub enum OrderSort {
+    PriceAsc,
+    PriceDesc,
+    CreatedAtAsc,
+    CreatedAtDesc,
 }
 
 #[cw_serde]
@@ -114,4 +201,64 @@ pub struct GetShareByIdResponse {
 #[cw_serde]
 pub struct GetSharesResponse {
     pub shares: Vec<Share>,
+}
+
+#[cw_serde]
+pub struct GetSellPriceResponse {
+    pub total_price: String,
+    pub price_per_share: String,
+    pub requested_shares: u64,
+}
+
+#[cw_serde]
+pub struct GetBuyPriceResponse {
+    pub total_price: String,
+    pub price_per_share: String,
+    pub requested_shares: u64,
+}
+
+#[cw_serde]
+pub struct GetBuyOrdersResponse {
+    pub orders: Vec<BuyOrder>,
+}
+
+#[cw_serde]
+pub struct GetBuyOrderByIdResponse {
+    pub order: BuyOrder,
+}
+
+#[cw_serde]
+pub struct GetSellOrdersResponse {
+    pub orders: Vec<SellOrder>,
+}
+
+#[cw_serde]
+pub struct GetSellOrderByIdResponse {
+    pub order: SellOrder,
+}
+
+#[cw_serde]
+pub struct GetSalesResponse {
+    pub sales: Vec<Sale>,
+}
+
+#[cw_serde]
+pub struct GetSalesByUserResponse {
+    pub buy: Vec<Sale>,
+    pub sell: Vec<Sale>,
+}
+
+#[cw_serde]
+pub struct GetSaleByIdResponse {
+    pub sale: Sale,
+}
+
+#[cw_serde]
+pub struct GetTotalBuyVolumeResponse {
+    pub amount: u64,
+}
+
+#[cw_serde]
+pub struct GetTotalSellVolumeResponse {
+    pub amount: u64,
 }

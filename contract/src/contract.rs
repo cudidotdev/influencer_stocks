@@ -2,7 +2,6 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
-use execute::bids::place_bid;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -62,7 +61,39 @@ pub fn execute(
             stock_id,
             price_per_share,
             shares,
-        } => place_bid(deps, env, info, stock_id, price_per_share, shares),
+        } => execute::bids::place_bid(deps, env, info, stock_id, price_per_share, shares),
+
+        ExecuteMsg::CreateBuyOrder {
+            stock_id,
+            price_per_share,
+            shares,
+        } => execute::orders::create_buy_order(deps, env, info, stock_id, shares, price_per_share),
+
+        ExecuteMsg::CreateSellOrder {
+            stock_id,
+            price_per_share,
+            shares,
+        } => execute::orders::create_sell_order(deps, env, info, stock_id, shares, price_per_share),
+
+        ExecuteMsg::CancelBuyOrder { buy_order_id } => {
+            execute::orders::cancel_buy_order(deps, env, info, buy_order_id)
+        }
+
+        ExecuteMsg::CancelSellOrder { sell_order_id } => {
+            execute::orders::cancel_sell_order(deps, env, info, sell_order_id)
+        }
+
+        ExecuteMsg::QuickBuy {
+            stock_id: _stock_id,
+            shares: _shares,
+            slippage: _slippage,
+        } => todo!(),
+
+        ExecuteMsg::QuickSell {
+            stock_id: _stock_id,
+            shares: _shares,
+            slippage: _slippage,
+        } => todo!(),
     }
 }
 
@@ -136,6 +167,70 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
         QueryMsg::GetSharesByStock { stock_id } => {
             to_json_binary(&query::shares::get_shares_by_stock_id(deps, env, stock_id)?)
+        }
+
+        QueryMsg::GetSellPrice {
+            stock_id,
+            requested_shares,
+        } => to_json_binary(&query::orders::get_sell_price(
+            deps,
+            env,
+            stock_id,
+            requested_shares,
+        )?),
+
+        QueryMsg::GetBuyPrice {
+            stock_id,
+            requested_shares,
+        } => to_json_binary(&query::orders::get_buy_price(
+            deps,
+            env,
+            stock_id,
+            requested_shares,
+        )?),
+
+        QueryMsg::GetTotalBuyVolume { stock_id } => to_json_binary(
+            &query::orders::get_total_buy_order_volume(deps, env, stock_id)?,
+        ),
+
+        QueryMsg::GetTotalSellVolume { stock_id } => to_json_binary(
+            &query::orders::get_total_sell_order_volume(deps, env, stock_id)?,
+        ),
+
+        QueryMsg::GetOpenBuyOrdersByStock { stock_id, sort_by } => to_json_binary(
+            &query::orders::get_open_buy_orders_by_stock_id(deps, env, stock_id, sort_by)?,
+        ),
+
+        QueryMsg::GetOpenSellOrdersByStock { stock_id, sort_by } => to_json_binary(
+            &query::orders::get_open_sell_orders_by_stock_id(deps, env, stock_id, sort_by)?,
+        ),
+
+        QueryMsg::GetOpenBuyOrdersByOwner { owner, sort_by } => to_json_binary(
+            &query::orders::get_open_buy_orders_by_owner(deps, env, owner, sort_by)?,
+        ),
+
+        QueryMsg::GetOpenSellOrdersByOwner { owner, sort_by } => to_json_binary(
+            &query::orders::get_open_sell_orders_by_owner(deps, env, owner, sort_by)?,
+        ),
+
+        QueryMsg::GetBuyOrderById { buy_order_id } => to_json_binary(
+            &query::orders::get_buy_order_by_id(deps, env, buy_order_id)?,
+        ),
+
+        QueryMsg::GetSellOrderById { sell_order_id } => to_json_binary(
+            &query::orders::get_sell_order_by_id(deps, env, sell_order_id)?,
+        ),
+
+        QueryMsg::GetSalesByStock { stock_id } => {
+            to_json_binary(&query::sales::get_sales_by_stock_id(deps, env, stock_id)?)
+        }
+
+        QueryMsg::GetSalesByUser { user } => {
+            to_json_binary(&query::sales::get_sales_by_user(deps, env, user)?)
+        }
+
+        QueryMsg::GetSalesById { sale_id } => {
+            to_json_binary(&query::sales::get_sale_by_id(deps, env, sale_id)?)
         }
     }
 }
