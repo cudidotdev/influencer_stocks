@@ -40,7 +40,7 @@ export function AuctionManagement() {
   const [activeTab, setActiveTab] = useState("eligible");
 
   const { connect } = useWallet();
-  const { contractClient } = useContract();
+  const { signingClient, contractClient, msgComposer } = useContract();
 
   async function loadStocks(
     contractClient: ContractClient,
@@ -82,10 +82,16 @@ export function AuctionManagement() {
     setIsStartingAuction(true);
 
     try {
-      // This would be replaced with actual contract interaction
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      if (!msgComposer || !signingClient || !contractClient)
+        return toast.error("Please connect wallet");
 
-      // Use actual start auction time
+      const msg = msgComposer.startAuction({ stockId: selectedStock.id });
+
+      await signingClient!.signAndBroadcast(
+        contractClient.sender,
+        [msg],
+        "auto", // or specify gas
+      );
 
       // Update the stock status in the UI
       setStocks(
@@ -179,10 +185,19 @@ export function AuctionManagement() {
         value={activeTab}
         onValueChange={setActiveTab}
       >
-        <TabsList className="mb-4">
-          <TabsTrigger value="eligible">Eligible for Auction</TabsTrigger>
-          <TabsTrigger value="in-auction">In Auction</TabsTrigger>
-          <TabsTrigger value="completed">Completed Auctions</TabsTrigger>
+        <TabsList className="mb-4 !h-fit !p-1">
+          <TabsTrigger value="eligible" className="px-6 py-1.5 cursor-pointer">
+            Eligible for Auction
+          </TabsTrigger>
+          <TabsTrigger
+            value="in-auction"
+            className="px-6 py-1.5 cursor-pointer"
+          >
+            In Auction
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="px-6 py-1.5 cursor-pointer">
+            Completed Auctions
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="eligible">
@@ -280,7 +295,9 @@ export function AuctionManagement() {
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Total Shares</TableHead>
                       <TableHead>Auction Period</TableHead>
-                      <TableHead className="text-right">Lowest Bid</TableHead>
+                      <TableHead className="text-right">
+                        Lowest Bid Price
+                      </TableHead>
                       <TableHead className="text-right">Total Bids</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>

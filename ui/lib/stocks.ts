@@ -28,7 +28,7 @@ export async function getStocksByInfluencer(
   for (const stock of res.stocks) {
     const status: Stock["status"] = !stock.auction_end
       ? "upcoming"
-      : stock.auction_end < moment.utc().valueOf()
+      : stock.auction_end > moment.utc().valueOf()
         ? "in_auction"
         : "trading";
 
@@ -77,12 +77,15 @@ export async function getStocksByInfluencer(
     }
 
     if (status == "trading") {
-      const price_res = await contractClient.getBuyPrice({
-        requestedShares: 1,
-        stockId: stock.id,
-      });
+      let lowest_price = "0";
 
-      const lowest_price = price_res.price_per_share;
+      try {
+        const price_res = await contractClient.getBuyPrice({
+          requestedShares: 1,
+          stockId: stock.id,
+        });
+        lowest_price = price_res.price_per_share;
+      } catch (error) {}
 
       formated_stock.lowest_price = lowest_price;
     }
