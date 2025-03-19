@@ -28,9 +28,9 @@ export default function UserDashboardLayout({
       <div className="flex justify-end mb-4">
         <p className="text-sm text-muted-foreground">
           Are you an influencer?{" "}
-          <a href="/influencer" className="text-primary hover:underline">
+          <Link href="/influencer" className="text-primary hover:underline">
             Create your stock!
-          </a>
+          </Link>
         </p>
       </div>
 

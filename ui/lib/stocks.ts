@@ -15,6 +15,14 @@ export type Stock = {
   total_bids?: number;
 };
 
+export type AuctionStock = {
+  stock_id: number;
+  ticker: string;
+  total_shares: number;
+  lowest_bid_price: string;
+  auction_end: string;
+};
+
 export async function getStocksByInfluencer(
   contractClient: ContractClient,
   influencer: string,
@@ -28,7 +36,7 @@ export async function getStocksByInfluencer(
   for (const stock of res.stocks) {
     const status: Stock["status"] = !stock.auction_end
       ? "upcoming"
-      : stock.auction_end > moment.utc().valueOf()
+      : stock.marked_as_active_auction
         ? "in_auction"
         : "trading";
 
@@ -94,4 +102,60 @@ export async function getStocksByInfluencer(
   }
 
   return stocks;
+}
+
+export async function getAuctionedStock(contractClient: ContractClient) {
+  const stocksInAuction = (
+    await contractClient.getAllStocks({
+      inAuction: true,
+    })
+  ).stocks;
+
+  const auctionedStocks: AuctionStock[] = [];
+
+  for (const stock of stocksInAuction) {
+    const lowest_bid_price = (
+      await contractClient.getMinimumBidPrice({
+        sharesRequested: 1,
+        stockId: stock.id,
+      })
+    ).min_price;
+
+    const auction_end = moment.utc(stock.auction_end).format("YYYY-MM-DD");
+
+    auctionedStocks.push({
+      stock_id: stock.id,
+      total_shares: stock.total_shares,
+      ticker: stock.ticker,
+      lowest_bid_price,
+      auction_end,
+    });
+  }
+
+  return auctionedStocks;
+}
+
+export async function getStockValue(
+  contractClient: ContractClient,
+  stockId: number,
+) {
+  // ordered by last sale first
+  const sales_res = await contractClient.getSalesByStock({ stockId });
+
+  const sales = sales_res.sales;
+
+  // get value of last sale
+  const value = sales?.[0].price_per_share || 0;
+
+  // convert from uhuahua to huahua
+  return value / 1_000_000;
+}
+
+export async function getStockById(
+  contractClient: ContractClient,
+  stockId: number,
+) {
+  const stock = (await contractClient.getStockById({ stockId })).stock;
+
+  return stock;
 }

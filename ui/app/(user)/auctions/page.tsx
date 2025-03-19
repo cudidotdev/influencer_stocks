@@ -1,5 +1,5 @@
-import { AuctionsTable } from "@/components/auctions-table";
+import { AuctionsView } from "@/components/users/auctions-view";
 
 export default function Home() {
-  return <AuctionsTable />;
+  return <AuctionsView />;
 }
