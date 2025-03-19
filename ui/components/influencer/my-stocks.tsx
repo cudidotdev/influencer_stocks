@@ -146,7 +146,7 @@ export function MyStocks() {
           {stocks.length === 0 ? (
             <TableRow>
               <TableCell colSpan={8} className="text-center">
-                You haven't created any stocks yet
+                You haven&apos;t created any stocks yet
               </TableCell>
             </TableRow>
           ) : (

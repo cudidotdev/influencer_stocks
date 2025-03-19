@@ -274,8 +274,8 @@ export function AuctionManagement() {
                                 <AlertTitle>Important</AlertTitle>
                                 <AlertDescription>
                                   Once the auction starts, it will run for{" "}
-                                  {auctionDuration} days. After that, you'll
-                                  need to manually end the auction.
+                                  {auctionDuration} days. After that,
+                                  you&apos;ll need to manually end the auction.
                                 </AlertDescription>
                               </Alert>
                               <DialogFooter>

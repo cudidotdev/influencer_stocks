@@ -167,15 +167,12 @@ export function CreateStock() {
                 )}
               />
 
-              <Alert
-                variant="outline"
-                className="bg-blue-50 text-blue-800 border-blue-200"
-              >
+              <Alert className="bg-blue-50 text-blue-800 border-blue-200">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Important</AlertTitle>
                 <AlertDescription>
-                  After creating your stock, you'll need to start an auction to
-                  allow investors to bid on shares.
+                  After creating your stock, you&apos;ll need to start an
+                  auction to allow investors to bid on shares.
                 </AlertDescription>
               </Alert>
 
