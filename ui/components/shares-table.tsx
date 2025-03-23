@@ -54,11 +54,12 @@ export function SharesTable({ shares }: { shares: Share[] }) {
                   {share.total_value}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button variant="outline" size="sm" className="mr-2">
-                    Buy
+                  <Button asChild variant="outline" size="sm" className="mr-2">
+                    <Link href={"/trade?stock_id=" + share.stock_id}>Buy</Link>
                   </Button>
+
                   <Button variant="outline" size="sm">
-                    Sell
+                    <Link href={"/trade?stock_id=" + share.stock_id}>Sell</Link>
                   </Button>
                 </TableCell>
               </TableRow>
