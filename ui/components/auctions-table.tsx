@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { AuctionStock } from "@/lib/stocks";
+import Link from "next/link";
 
 export function AuctionsTable({
   auctionedStocks: auctions,
@@ -48,13 +49,17 @@ export function AuctionsTable({
                   {auction.lowest_bid_price}
                 </TableCell>
                 <TableCell>{auction.auction_end}</TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="cursor-pointer"
-                  >
-                    Place Bid
+                <TableCell className="text-right space-x-1">
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={"/place-bid?stock_id=" + auction.stock_id}>
+                      View
+                    </Link>
+                  </Button>
+
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={"/place-bid?stock_id=" + auction.stock_id}>
+                      Place Bid
+                    </Link>
                   </Button>
                 </TableCell>
               </TableRow>

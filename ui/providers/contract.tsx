@@ -61,7 +61,7 @@ export function ContractProvider({ children }: ContractProviderProps) {
         rpcEndpoint,
         offlineSigner,
         {
-          gasPrice: GasPrice.fromString("0.001uhuahua"),
+          gasPrice: GasPrice.fromString("0.00001huahua"),
         },
       );
 

@@ -43,7 +43,7 @@ export default function UserDashboardLayout({
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} className="w-full">
-            <TabsList className="w-full grid grid-cols-3 sm:grid-cols-5 mb-4 !h-fit !p-1">
+            <TabsList className="w-full grid grid-cols-3 md:grid-cols-6 mb-4 !h-fit !p-1">
               <TabsTrigger value="overview" asChild className="px-6 py-2">
                 <Link href="/" className="w-full">
                   Overview
@@ -53,6 +53,12 @@ export default function UserDashboardLayout({
               <TabsTrigger value="trade" asChild className="px-6 py-2">
                 <Link href="/trade" className="w-full">
                   Trade
+                </Link>
+              </TabsTrigger>
+
+              <TabsTrigger value="place-bid" asChild className="px-6 py-2">
+                <Link href="/place-bid" className="w-full">
+                  Bid
                 </Link>
               </TabsTrigger>
 
@@ -68,8 +74,8 @@ export default function UserDashboardLayout({
                 </Link>
               </TabsTrigger>
 
-              <TabsTrigger value="bids" asChild className="px-6 py-2">
-                <Link href="/bids" className="w-full">
+              <TabsTrigger value="my-bids" asChild className="px-6 py-2">
+                <Link href="/my-bids" className="w-full">
                   My Bids
                 </Link>
               </TabsTrigger>

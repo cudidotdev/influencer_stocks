@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Share } from "@/lib/shares";
+import Link from "next/link";
 
 export function SharesTable({ shares }: { shares: Share[] }) {
   return (
@@ -29,7 +30,13 @@ export function SharesTable({ shares }: { shares: Share[] }) {
           {shares.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="text-center">
-                You don&apos;t own any shares yet
+                <div className="pt-4 flex gap-4 justify-center items-center">
+                  <p>You don&apos;t own any shares yet</p>
+
+                  <Button variant="outline" asChild>
+                    <Link href="/trade">Buy Stocks</Link>
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ) : (

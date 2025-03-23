@@ -1,10 +1,10 @@
 "use client";
 
-import { TradeStock } from "@/components/users/trade-stock";
+import { PlaceBid } from "@/components/users/place-bid";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export default function TradePage() {
+export default function PlaceBidPage() {
   const searchParams = useSearchParams();
   const [stockId, setStockId] = useState<string>();
 
@@ -18,10 +18,10 @@ export default function TradePage() {
   return (
     <div className="container py-6 space-y-1">
       <p className="text-sm text-muted-foreground">
-        Select a stock and place your order.
+        Select a stock and place your bid. Auctions last for 24 hours.
       </p>
 
-      <TradeStock stockId={stockId} />
+      <PlaceBid stockId={stockId} />
     </div>
   );
 }

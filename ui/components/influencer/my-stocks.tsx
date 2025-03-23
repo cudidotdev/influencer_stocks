@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -26,12 +26,14 @@ import { useWallet } from "@/providers/wallet";
 import { ContractClient } from "@/lib/contract/Contract.client";
 import { getStocksByInfluencer, Stock } from "@/lib/stocks";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export function MyStocks() {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [loading, setLoading] = useState(true);
   const { connect } = useWallet();
-  const { contractClient } = useContract();
+  const { signingClient, contractClient, msgComposer } = useContract();
+  const router = useRouter();
 
   async function loadStocks(
     contractClient: ContractClient,
@@ -49,6 +51,50 @@ export function MyStocks() {
       setLoading(false);
     }
   }
+
+  const startAuction = useCallback(
+    async (stockId: number) => {
+      try {
+        if (!msgComposer || !signingClient || !contractClient)
+          return toast.error("Please connect wallet");
+
+        const msg = msgComposer.startAuction({ stockId });
+
+        await signingClient!.signAndBroadcast(
+          contractClient.sender,
+          [msg],
+          "auto", // or specify gas
+        );
+
+        router.refresh();
+      } catch (error: any) {
+        toast.error(error?.message);
+      }
+    },
+    [signingClient, msgComposer],
+  );
+
+  const endAuction = useCallback(
+    async (stockId: number) => {
+      try {
+        if (!msgComposer || !signingClient || !contractClient)
+          return toast.error("Please connect wallet");
+
+        const msg = msgComposer.endAuction({ stockId });
+
+        await signingClient!.signAndBroadcast(
+          contractClient.sender,
+          [msg],
+          "auto", // or specify gas
+        );
+
+        router.refresh();
+      } catch (error: any) {
+        toast.error(error?.message);
+      }
+    },
+    [signingClient, msgComposer],
+  );
 
   useEffect(() => {
     if (!contractClient) {
@@ -182,13 +228,17 @@ export function MyStocks() {
                       <DropdownMenuSeparator />
                       {stock.status === "upcoming" && (
                         <DropdownMenuItem>
-                          <button onClick={() => alert("click")}>
+                          <button onClick={() => startAuction(stock.id)}>
                             Start Auction
                           </button>
                         </DropdownMenuItem>
                       )}
                       {stock.status === "in_auction" && (
-                        <DropdownMenuItem>End Auction</DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <button onClick={() => endAuction(stock.id)}>
+                            End Auction
+                          </button>
+                        </DropdownMenuItem>
                       )}
                       <DropdownMenuItem>View Details</DropdownMenuItem>
                       <DropdownMenuItem>View Bids</DropdownMenuItem>

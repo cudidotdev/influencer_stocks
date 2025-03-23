@@ -79,7 +79,7 @@ export async function getStocksByInfluencer(
         stockId: stock.id,
       });
 
-      const lowest_bid = bids_res.min_price;
+      const lowest_bid = (+bids_res.min_price / 1_000_000).toFixed(6);
 
       formated_stock.lowest_bid = lowest_bid;
     }
@@ -115,11 +115,13 @@ export async function getAuctionedStock(contractClient: ContractClient) {
 
   for (const stock of stocksInAuction) {
     const lowest_bid_price = (
-      await contractClient.getMinimumBidPrice({
-        sharesRequested: 1,
-        stockId: stock.id,
-      })
-    ).min_price;
+      +(
+        await contractClient.getMinimumBidPrice({
+          sharesRequested: 1,
+          stockId: stock.id,
+        })
+      ).min_price / 1_000_000
+    ).toFixed(6);
 
     const auction_end = moment.utc(stock.auction_end).format("YYYY-MM-DD");
 
@@ -133,6 +135,16 @@ export async function getAuctionedStock(contractClient: ContractClient) {
   }
 
   return auctionedStocks;
+}
+
+export async function getStocksInSale(contractClient: ContractClient) {
+  const stocksInSale = (
+    await contractClient.getAllStocks({
+      inSale: true,
+    })
+  ).stocks;
+
+  return stocksInSale;
 }
 
 export async function getStockValue(

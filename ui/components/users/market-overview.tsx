@@ -75,7 +75,7 @@ export function MarketOverview() {
           </CardHeader>
 
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-xl font-bold">
               {shares.reduce((acc, share) => (acc += +share.total_value), 0)}{" "}
               HUAHUA
             </div>
@@ -92,7 +92,7 @@ export function MarketOverview() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{shares.length}</div>
+            <div className="text-xl font-bold">{shares.length}</div>
             <p className="text-xs text-muted-foreground">
               Number of stocks you own part of
             </p>
@@ -108,7 +108,7 @@ export function MarketOverview() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{auctionedStocks.length}</div>
+              <div className="text-xl font-bold">{auctionedStocks.length}</div>
               <p className="text-xs text-muted-foreground">
                 You can bid on these stocks
               </p>

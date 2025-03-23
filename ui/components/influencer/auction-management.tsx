@@ -129,8 +129,16 @@ export function AuctionManagement() {
     setIsEndingAuction(true);
 
     try {
-      // This would be replaced with actual contract interaction
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      if (!msgComposer || !signingClient || !contractClient)
+        return toast.error("Please connect wallet");
+
+      const msg = msgComposer.endAuction({ stockId: selectedStock.id });
+
+      await signingClient!.signAndBroadcast(
+        contractClient.sender,
+        [msg],
+        "auto", // or specify gas
+      );
 
       // Update the stock status in the UI
       setStocks(

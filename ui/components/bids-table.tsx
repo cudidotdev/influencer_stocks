@@ -10,12 +10,18 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useContract } from "@/providers/contract";
+import { ContractClient } from "@/lib/contract/Contract.client";
+import { toast } from "sonner";
+import moment from "moment";
 
 type Bid = {
   id: number;
   stock_id: number;
   ticker: string;
   shares_requested: number;
+  remaining_shares: number;
   price_per_share: string;
   total_price: string;
   status: "active" | "completed" | "cancelled";
@@ -25,50 +31,87 @@ type Bid = {
 export function BidsTable() {
   const [bids, setBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(true);
+  const { contractClient } = useContract();
+
+  async function loadBids(contractClient: ContractClient) {
+    try {
+      setLoading(true);
+
+      const bids_res = await contractClient.getBidsByBidder({
+        bidder: contractClient.sender,
+      });
+
+      const bids = [];
+
+      for (const bid of bids_res.bids) {
+        const status: Bid["status"] = !bid.active
+          ? "completed"
+          : bid.open
+            ? "active"
+            : "cancelled";
+
+        const total_price = (
+          (bid.price_per_share / 1_000_000) *
+          bid.remaining_shares
+        ).toFixed(6);
+
+        const price_per_share = (bid.price_per_share / 1_000_000).toFixed(6);
+
+        const ticker = (
+          await contractClient.getStockById({ stockId: bid.stock_id })
+        ).stock.ticker;
+
+        const created_at = moment.utc(bid.created_at).format("YYYY-MM-DD");
+
+        bids.push({
+          ...bid,
+          status,
+          price_per_share,
+          total_price,
+          ticker,
+          created_at,
+        });
+      }
+
+      setBids(bids);
+    } catch (error: any) {
+      toast.error("Error: " + error?.message);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    // Mock data - would be replaced with actual contract query
-    const mockBids: Bid[] = [
-      {
-        id: 201,
-        stock_id: 101,
-        ticker: "ALEX",
-        shares_requested: 50,
-        price_per_share: "5.00",
-        total_price: "250.00",
-        status: "active",
-        created_at: "2023-07-10",
-      },
-      {
-        id: 202,
-        stock_id: 102,
-        ticker: "EMMA",
-        shares_requested: 25,
-        price_per_share: "10.00",
-        total_price: "250.00",
-        status: "completed",
-        created_at: "2023-07-05",
-      },
-    ];
+    if (contractClient) loadBids(contractClient);
+  }, [contractClient?.sender]);
 
-    setTimeout(() => {
-      setBids(mockBids);
-      setLoading(false);
-    }, 500);
-  }, []);
+  if (!contractClient?.sender) {
+    return (
+      <div className="flex justify-center p-4">
+        Please conect wallet to continue
+      </div>
+    );
+  }
 
   if (loading) {
-    return <div className="flex justify-center p-4">Loading your bids...</div>;
+    return (
+      <div className="flex justify-center p-4">Loading your stocks...</div>
+    );
   }
 
   return (
     <div>
+      <p className="text-sm text-muted-foreground mb-1">
+        Funds are refunded when a share is outbid
+      </p>
+
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>ID</TableHead>
             <TableHead>Stock</TableHead>
-            <TableHead className="text-right">Shares</TableHead>
+            <TableHead className="text-right">Shares Requested</TableHead>
+            <TableHead className="text-right">Shares Remained</TableHead>
             <TableHead className="text-right">Price/Share</TableHead>
             <TableHead className="text-right">Total</TableHead>
             <TableHead>Status</TableHead>
@@ -92,6 +135,9 @@ export function BidsTable() {
                   {bid.shares_requested}
                 </TableCell>
                 <TableCell className="text-right">
+                  {bid.remaining_shares}
+                </TableCell>
+                <TableCell className="text-right">
                   {bid.price_per_share}
                 </TableCell>
                 <TableCell className="text-right">{bid.total_price}</TableCell>
@@ -107,16 +153,18 @@ export function BidsTable() {
                     </span>
                   )}
                   {bid.status === "cancelled" && (
-                    <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
-                      Cancelled
+                    <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                      Outbid
                     </span>
                   )}
                 </TableCell>
                 <TableCell>{bid.created_at}</TableCell>
                 <TableCell className="text-right">
-                  {bid.status === "active" && (
-                    <Button variant="outline" size="sm">
-                      Cancel
+                  {(bid.status === "active" || bid.status == "cancelled") && (
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={"/place-bid?stock_id=" + bid.stock_id}>
+                        Place Another Bid
+                      </Link>
                     </Button>
                   )}
                 </TableCell>
