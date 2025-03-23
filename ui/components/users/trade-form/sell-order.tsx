@@ -53,7 +53,7 @@ export function SellOrderForm({ stockId }: { stockId: number }) {
     contractClient: ContractClient,
     stockId: number,
   ) {
-    let shares = (
+    const shares = (
       await contractClient.getSharesByOwner({ owner: contractClient.sender })
     ).shares.filter((share) => share.stock_id == stockId);
 

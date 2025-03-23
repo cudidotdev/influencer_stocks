@@ -119,7 +119,7 @@ export function QuickBuyForm({ stockId }: { stockId: number }) {
     contractClient: ContractClient,
     stockId: number,
   ) {
-    let maxShares = (await contractClient.getTotalSellVolume({ stockId }))
+    const maxShares = (await contractClient.getTotalSellVolume({ stockId }))
       .amount;
     setMaxShares(maxShares);
   }
@@ -132,11 +132,11 @@ export function QuickBuyForm({ stockId }: { stockId: number }) {
     try {
       setFetchingPrice(true);
 
-      let price = (
+      const price = (
         await contractClient.getBuyPrice({ requestedShares, stockId })
       ).total_price;
 
-      let toDecimal = +(+price / 1_000_000).toFixed(6);
+      const toDecimal = +(+price / 1_000_000).toFixed(6);
 
       setTotalPrice(toDecimal);
     } catch (error: any) {

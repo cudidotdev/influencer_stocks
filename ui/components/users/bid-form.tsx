@@ -107,11 +107,11 @@ export function BidForm({ stockId }: { stockId: number }) {
     try {
       setFetchingPrice(true);
 
-      let min_price = (
+      const min_price = (
         await contractClient.getMinimumBidPrice({ sharesRequested, stockId })
       ).min_price;
 
-      let toDecimal = +(+min_price / 1_000_000).toFixed(6);
+      const toDecimal = +(+min_price / 1_000_000).toFixed(6);
 
       setMinPrice(toDecimal);
       form.setValue("price", toDecimal);
@@ -217,7 +217,7 @@ export function BidForm({ stockId }: { stockId: number }) {
                       />
                     </FormControl>
                     <FormDescription>
-                      Enter the price you're willing to pay per share
+                      Enter the price you&apos;re willing to pay per share
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

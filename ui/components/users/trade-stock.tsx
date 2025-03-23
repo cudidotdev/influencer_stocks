@@ -7,17 +7,26 @@ import { useWallet } from "@/providers/wallet";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { StockSelector } from "./stock-selector";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Stock } from "@/lib/contract/Contract.types";
 import { TradeForm } from "./trade-form";
 
-export function TradeStock({ stockId }: { stockId: string | undefined }) {
+export function TradeStock() {
   const [loading, setLoading] = useState(false);
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [stock, setStock] = useState<Stock>();
   const { connect } = useWallet();
   const { contractClient } = useContract();
   const router = useRouter();
+  const [stockId, setStockId] = useState<number>();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const stockId = searchParams.get("stock_id");
+
+    if (stockId) setStockId(+stockId);
+    else setStockId(undefined);
+  }, [searchParams]);
 
   async function loadStocks(contractClient: ContractClient) {
     try {

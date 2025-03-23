@@ -7,7 +7,7 @@ import { useWallet } from "@/providers/wallet";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { StockSelector } from "./stock-selector";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getOpenBidsByStock } from "@/lib/bids";
 import { Bid, Stock } from "@/lib/contract/Contract.types";
 import { BidDistribution } from "./bid-distribution";
@@ -15,7 +15,7 @@ import { CountdownTimer } from "./countdown-timer";
 import moment from "moment";
 import { BidForm } from "./bid-form";
 
-export function PlaceBid({ stockId }: { stockId: string | undefined }) {
+export function PlaceBid() {
   const [loading, setLoading] = useState(false);
   const [auctionedStocks, setAuctionedStocks] = useState<AuctionStock[]>([]);
   const [stock, setStock] = useState<Stock>();
@@ -24,6 +24,15 @@ export function PlaceBid({ stockId }: { stockId: string | undefined }) {
   const { connect } = useWallet();
   const { contractClient } = useContract();
   const router = useRouter();
+  const [stockId, setStockId] = useState<number>();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const stockId = searchParams.get("stock_id");
+
+    if (stockId) setStockId(+stockId);
+    else setStockId(undefined);
+  }, [searchParams]);
 
   async function loadStocks(contractClient: ContractClient) {
     try {
